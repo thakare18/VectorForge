@@ -5,8 +5,8 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "author": "Prathamesh Thakare",
   "license": "MIT",
@@ -21,3 +21,4 @@
     "nodemon": "^3.1.10"
   }
 }
+
