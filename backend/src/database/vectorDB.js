@@ -1,3 +1,5 @@
+const bruteForce = require("../algorithms/bruteForce");
+
 class VectorDB {
     constructor() {
         this.vectors = [];
@@ -34,6 +36,15 @@ class VectorDB {
 
     size() {
         return this.vectors.length;
+    }
+
+     search(queryVector, k = 5, metric = "cosine") {
+        return bruteForce.search(
+            this.vectors,
+            queryVector,
+            k,
+            metric
+        );
     }
 }
 
