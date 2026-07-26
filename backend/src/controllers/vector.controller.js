@@ -1,6 +1,12 @@
 const VectorDB = require("../database/vectorDB");
+const sampleData = require("../data/sampleData");
 
 const database = new VectorDB();
+
+// UPDATED
+sampleData.forEach((vector) => {
+    database.insert(vector);
+});
 
 const getVectors = (req, res) => {
     res.status(200).json({
