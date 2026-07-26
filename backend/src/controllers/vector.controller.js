@@ -17,14 +17,28 @@ const getVectors = (req, res) => {
 };
 
 const insertVector = (req, res) => {
-    const vector = req.body;
 
-    database.insert(vector);
+    // UPDATED
+    const { id, values, metadata } = req.body;
+
+    // UPDATED
+    if (!id || !Array.isArray(values)) {
+        return res.status(400).json({
+            success: false,
+            message: "id and values are required."
+        });
+    }
+
+    // UPDATED
+    database.insert({
+        id,
+        values,
+        metadata: metadata || {}
+    });
 
     res.status(201).json({
         success: true,
-        message: "Vector inserted successfully.",
-        data: vector
+        message: "Vector inserted successfully."
     });
 };
 
