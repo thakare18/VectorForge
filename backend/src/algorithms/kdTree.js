@@ -7,6 +7,17 @@ class KDNode {
     }
 }
 
+
+const getAxis = (depth, dimensions) => {
+    return depth % dimensions;
+};
+
+const sortVectors = (vectors, axis) => {
+    return [...vectors].sort((a, b) => {
+        return a.values[axis] - b.values[axis];
+    });
+};
+
 const buildKDTree = (vectors, depth = 0) => {
 
     if (vectors.length === 0) {
@@ -41,7 +52,23 @@ const buildKDTree = (vectors, depth = 0) => {
     return node;
 };
 
+const printKDTree = (node, level = 0) => {
+
+    if (!node) {
+        return;
+    }
+
+    console.log(
+        `${" ".repeat(level * 4)}${node.vector.id} (Axis ${node.axis})`
+    );
+
+    printKDTree(node.left, level + 1);
+
+    printKDTree(node.right, level + 1);
+};
+
 module.exports = {
     KDNode,
-    buildKDTree
+    buildKDTree,
+    printKDTree
 };
