@@ -47,7 +47,9 @@ const searchVectors = (req, res) => {
     const {
         vector,
         k = 5,
-        metric = "cosine"
+        metric = "cosine",
+         // UPDATED
+        algorithm = "brute-force"
     } = req.body;
 
     if (!Array.isArray(vector)) {
@@ -57,10 +59,38 @@ const searchVectors = (req, res) => {
         });
     }
 
-    const results = database.search(vector, k, metric);
+    // UPDATED
+    let results;
+
+    // UPDATED
+    switch (algorithm) {
+
+        // UPDATED
+        case "kd-tree":
+            results = database.search(
+                vector,
+                k,
+                metric
+            );
+            break;
+
+        // UPDATED
+        case "brute-force":
+        default:
+            results = database.search(
+                vector,
+                k,
+                metric
+            );
+            break;
+    }
 
     res.status(200).json({
         success: true,
+
+        // UPDATED
+        algorithm,
+
         count: results.length,
         data: results
     });
