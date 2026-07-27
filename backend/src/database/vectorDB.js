@@ -1,13 +1,25 @@
 const bruteForce = require("../algorithms/bruteForce");
 
+const {
+    buildKDTree
+} = require("../algorithms/kdTree");
+
 class VectorDB {
     constructor() {
         this.vectors = [];
+
+        
+        this.kdTree = null;
     }
 
     insert(vector) {
         this.vectors.push(vector);
+
+        // UPDATED
+        this.buildKDTree();
         return vector;
+
+        
     }
 
     getAll() {
@@ -27,11 +39,16 @@ class VectorDB {
 
         this.vectors.splice(index, 1);
 
+        // UPDATED
+        this.buildKDTree();
+
         return true;
     }
 
     clear() {
         this.vectors = [];
+        // UPDATED
+        this.kdTree = null;
     }
 
     size() {
@@ -45,6 +62,16 @@ class VectorDB {
             k,
             metric
         );
+    }
+
+     // UPDATED
+    buildKDTree() {
+        this.kdTree = buildKDTree(this.vectors);
+    }
+
+    // UPDATED
+    getKDTree() {
+        return this.kdTree;
     }
 }
 
