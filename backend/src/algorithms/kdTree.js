@@ -67,8 +67,60 @@ const printKDTree = (node, level = 0) => {
     printKDTree(node.right, level + 1);
 };
 
+// UPDATED
+const nearestNeighbor = (
+    node,
+    queryVector,
+    depth = 0
+) => {
+
+    
+    if (!node) {
+        return null;
+    }
+
+    
+    const axis = node.axis;
+
+    // UPDATED
+    let nextBranch = null;
+
+    
+    let oppositeBranch = null;
+
+    
+    if (queryVector[axis] < node.vector.values[axis]) {
+
+        
+        nextBranch = node.left;
+
+        
+        oppositeBranch = node.right;
+
+    } else {
+
+        // UPDATED
+        nextBranch = node.right;
+
+        // UPDATED
+        oppositeBranch = node.left;
+    }
+
+    
+    nearestNeighbor(
+        nextBranch,
+        queryVector,
+        depth + 1 //  means we are going deeper into the tree, so we increment the depth by 1
+    );
+
+    // UPDATED
+    return node;
+};
+
+
 module.exports = {
     KDNode,
     buildKDTree,
-    printKDTree
+    printKDTree,
+    nearestNeighbor
 };
