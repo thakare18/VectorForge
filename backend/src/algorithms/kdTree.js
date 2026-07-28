@@ -151,6 +151,48 @@ const shouldVisitOpposite = (
     return axisDistance < bestDistance;
 };
 
+// UPDATED
+const nearestNeighbor = (
+    currentNode,
+    queryVector,
+    best = null
+) => {
+
+    // UPDATED
+    if (!currentNode) {
+        return best;
+    }
+
+    
+    best = updateBest(
+        currentNode,
+        queryVector,
+        best
+    );
+
+        
+    const axis = currentNode.axis;
+
+    
+    let nextBranch = null;
+
+    
+    if (
+        queryVector[axis] <
+        currentNode.vector.values[axis]
+    ) {
+        nextBranch = currentNode.left;
+    } else {
+        nextBranch = currentNode.right;
+    }
+
+    
+    return nearestNeighbor(
+        nextBranch,
+        queryVector,
+        best
+    );
+};
 
 const printKDTree = (node, level = 0) => {
 
@@ -184,6 +226,8 @@ module.exports = {
     updateBest,
 
     shouldVisitOpposite,
+
+    nearestNeighbor,
 
     printKDTree,
 };
