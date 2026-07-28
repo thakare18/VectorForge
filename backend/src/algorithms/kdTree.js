@@ -76,20 +76,27 @@ const buildKDTree = (vectors) => {
     return createNode(vectors, 0);
 };
 
+
 // UPDATED
 const search = (
     root,
     queryVector
 ) => {
 
+    
     if (!root) {
         return null;
     }
 
-    return {
+    
+    const best = nearestNeighbor(
         root,
-        queryVector
-    };
+        queryVector,
+        null
+    );
+
+    // UPDATED
+    return best;
 };
 
 
