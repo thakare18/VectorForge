@@ -1,7 +1,3 @@
-const {
-    euclideanDistance
-} = require("./distance");
-
 class KDNode {
     constructor(vector, axis) {
         this.vector = vector;
@@ -16,41 +12,68 @@ const getAxis = (depth, dimensions) => {
 };
 
 const sortVectors = (vectors, axis) => {
-    return [...vectors].sort((a, b) => {
-        return a.values[axis] - b.values[axis];
+    return [...vectors].sort((first, second) => {
+        return first.values[axis] - second.values[axis];
     });
 };
 
-const buildKDTree = (vectors, depth = 0) => {
+// UPDATED
+const createNode = (vectors, depth) => {
 
-    if (!vectors || vectors.length === 0) {
+    // UPDATED
+    if (vectors.length === 0) {
         return null;
     }
 
+    // UPDATED
     const dimensions = vectors[0].values.length;
 
+    // UPDATED
     const axis = getAxis(depth, dimensions);
 
-    const sortedVectors = sortVectors(vectors, axis);
+    // UPDATED
+    const sortedVectors = sortVectors(
+        vectors,
+        axis
+    );
 
-    const medianIndex = Math.floor(sortedVectors.length / 2);
+    // UPDATED
+    const medianIndex = Math.floor(
+        sortedVectors.length / 2
+    );
 
+    
     const node = new KDNode(
         sortedVectors[medianIndex],
         axis
     );
 
-    node.left = buildKDTree(
+    
+    node.left = createNode(
         sortedVectors.slice(0, medianIndex),
         depth + 1
     );
 
-    node.right = buildKDTree(
+    
+    node.right = createNode(
         sortedVectors.slice(medianIndex + 1),
         depth + 1
     );
 
+    
     return node;
+};
+
+// UPDATED
+const buildKDTree = (vectors) => {
+
+    
+    if (!vectors || vectors.length === 0) {
+        return null;
+    }
+
+    
+    return createNode(vectors, 0);
 };
 
 const printKDTree = (node, level = 0) => {
@@ -68,56 +91,17 @@ const printKDTree = (node, level = 0) => {
     printKDTree(node.right, level + 1);
 };
 
-
-const nearestNeighbor = (
-    node,
-    queryVector,
-    bestNode = null,
-    bestDistance = Infinity
-) => {
-
-    
-    if (!node) {
-        return {
-            bestNode,
-            bestDistance
-        };
-    }
-
-    
-    const currentDistance = euclideanDistance(
-        queryVector,
-        node.vector.values
-    );
-
-    
-    if (currentDistance < bestDistance) {
-        bestDistance = currentDistance;
-        bestNode = node;
-    }
-
-    const axis = node.axis;
-
-    let nextBranch = null;
-
-    if (queryVector[axis] < node.vector.values[axis]) {
-        nextBranch = node.left;
-    } else {
-        nextBranch = node.right;
-    }
-
-    // UPDATED
-    return nearestNeighbor(
-        nextBranch,
-        queryVector,
-        bestNode,
-        bestDistance
-    );
-};
-
 module.exports = {
     KDNode,
+
+    
+    createNode,
+
+    getAxis,
+
+    sortVectors,
+
     buildKDTree,
-    printKDTree,
-    nearestNeighbor
+
+    printKDTree
 };
