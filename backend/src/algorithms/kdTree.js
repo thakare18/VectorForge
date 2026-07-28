@@ -76,6 +76,23 @@ const buildKDTree = (vectors) => {
     return createNode(vectors, 0);
 };
 
+// UPDATED
+const search = (
+    root,
+    queryVector
+) => {
+
+    if (!root) {
+        return null;
+    }
+
+    return {
+        root,
+        queryVector
+    };
+};
+
+
 const printKDTree = (node, level = 0) => {
 
     if (!node) {
@@ -103,5 +120,7 @@ module.exports = {
 
     buildKDTree,
 
-    printKDTree
+    search,
+
+    printKDTree,
 };
