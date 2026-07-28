@@ -1,7 +1,9 @@
 const bruteForce = require("../algorithms/bruteForce");
 
+// UPDATED
 const {
-    buildKDTree
+    buildKDTree,
+    search
 } = require("../algorithms/kdTree");
 
 class VectorDB {
@@ -55,14 +57,38 @@ class VectorDB {
         return this.vectors.length;
     }
 
-     search(queryVector, k = 5, metric = "cosine") {
-        return bruteForce.search(
-            this.vectors,
+     // UPDATED
+search(
+    queryVector,
+    k = 5,
+    metric = "cosine",
+    algorithm = "brute-force"
+) {
+
+    // UPDATED
+    if (
+        algorithm === "kd-tree"
+    ) {
+
+        // UPDATED
+        if (!this.kdTree) {
+            this.buildKDTree(); // Build the KD-tree if it hasnt been built yet
+        }
+
+        return search(
+            this.kdTree,
             queryVector,
-            k,
-            metric
+            k
         );
     }
+
+    return bruteForce.search(
+        this.vectors,
+        queryVector,
+        k,
+        metric
+    );
+}
 
      // UPDATED
     buildKDTree() {
