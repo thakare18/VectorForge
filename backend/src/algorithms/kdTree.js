@@ -102,7 +102,19 @@ const search = (
         k
     );
 
-    return results;
+// UPDATED
+return results.map((item) => {
+
+    return {
+        id: item.node.vector.id,
+        values: item.node.vector.values,
+        metadata: item.node.vector.metadata,
+
+        
+        score: 1 / (1 + item.distance) // means that the closer the distance, the higher the score 
+    };
+
+});
 };
 
 
