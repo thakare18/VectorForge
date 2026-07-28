@@ -82,25 +82,27 @@ const buildKDTree = (vectors) => {
 
 
 // UPDATED
+// UPDATED
 const search = (
     root,
-    queryVector
+    queryVector,
+    k = 5
 ) => {
 
-    
     if (!root) {
-        return null;
+        return [];
     }
 
-    
-    const best = nearestNeighbor(
+    const results = [];
+
+    nearestNeighbor(
         root,
         queryVector,
-        null
+        results,
+        k
     );
 
-    // UPDATED
-    return best;
+    return results;
 };
 
 
@@ -182,30 +184,32 @@ const shouldVisitOpposite = (
 };
 
 
+
 // UPDATED
 const nearestNeighbor = (
     currentNode,
     queryVector,
-    best = null
+    results,
+    k
 ) => {
 
-    // UPDATED
     if (!currentNode) {
-        return best;
+        return;
     }
 
     // UPDATED
-    best = updateBest(
+    updateTopK(
+        results,
         currentNode,
         queryVector,
-        best
+        k
     );
 
     const axis = currentNode.axis;
 
-    // UPDATED
-    let nextBranch;
-    let oppositeBranch;
+    let nextBranch = null;
+
+    let oppositeBranch = null;
 
     if (
         queryVector[axis] <
@@ -223,31 +227,37 @@ const nearestNeighbor = (
         oppositeBranch = currentNode.left;
     }
 
-    // UPDATED
-    best = nearestNeighbor(
+    nearestNeighbor(
         nextBranch,
         queryVector,
-        best
+        results,
+        k
     );
+
+    // UPDATED
+    const worstDistance =
+        results.length < k
+            ? Infinity
+            : results[
+                results.length - 1
+            ].distance;
 
     // UPDATED
     if (
         shouldVisitOpposite(
             queryVector,
             currentNode,
-            best.distance
+            worstDistance
         )
     ) {
 
-        best = nearestNeighbor(
+        nearestNeighbor(
             oppositeBranch,
             queryVector,
-            best
+            results,
+            k
         );
     }
-
-    // UPDATED
-    return best;
 };
 
 const printKDTree = (node, level = 0) => {
