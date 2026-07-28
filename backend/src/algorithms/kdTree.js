@@ -100,13 +100,27 @@ const updateBest = (
     best
 ) => {
 
-    const dx = currentNode.vector.values[0] - queryVector[0];
-    const dy = currentNode.vector.values[1] - queryVector[1];
+    // UPDATED
+    let distance = 0;
 
-    const distance = Math.sqrt(
-        (dx * dx) + (dy * dy)
-    );
+    // UPDATED
+    for (
+        let index = 0;
+        index < queryVector.length;
+        index++
+    ) {
 
+        const difference =
+            currentNode.vector.values[index] -
+            queryVector[index];
+
+        distance += difference * difference;
+    }
+
+    // UPDATED
+    distance = Math.sqrt(distance);
+
+    // UPDATED
     if (
         best === null ||
         distance < best.distance
