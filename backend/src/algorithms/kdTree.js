@@ -132,6 +132,39 @@ const updateBest = (
 };
 
 // UPDATED
+const updateTopK = (
+    results,
+    currentNode,
+    queryVector,
+    k
+) => {
+
+    
+    const distance = euclideanDistance(
+        currentNode.vector.values,
+        queryVector
+    );
+
+    
+    results.push({
+        node: currentNode,
+        distance
+    });
+
+    
+    results.sort((first, second) => {
+        return first.distance - second.distance;
+    });
+
+    
+    if (results.length > k) {
+        results.pop();
+    }
+
+    return results;
+};
+
+// UPDATED
 const shouldVisitOpposite = (
     queryVector,
     currentNode,
@@ -247,6 +280,8 @@ module.exports = {
     search,
 
     updateBest,
+    updateTopK,
+
 
     shouldVisitOpposite,
 
