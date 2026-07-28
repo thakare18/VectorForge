@@ -1,3 +1,7 @@
+
+const {
+    euclideanDistance
+} = require("./distance");
 class KDNode {
     constructor(vector, axis) {
         this.vector = vector;
@@ -108,24 +112,10 @@ const updateBest = (
 ) => {
 
     // UPDATED
-    let distance = 0;
-
-    // UPDATED
-    for (
-        let index = 0;
-        index < queryVector.length;
-        index++
-    ) {
-
-        const difference =
-            currentNode.vector.values[index] -
-            queryVector[index];
-
-        distance += difference * difference;
-    }
-
-    // UPDATED
-    distance = Math.sqrt(distance);
+    const distance = euclideanDistance(
+        currentNode.vector.values,
+        queryVector
+    );
 
     // UPDATED
     if (
