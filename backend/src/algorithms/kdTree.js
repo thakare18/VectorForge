@@ -93,6 +93,51 @@ const search = (
 };
 
 
+// UPDATED
+const updateBest = (
+    currentNode,
+    queryVector,
+    best
+) => {
+
+    const dx = currentNode.vector.values[0] - queryVector[0];
+    const dy = currentNode.vector.values[1] - queryVector[1];
+
+    const distance = Math.sqrt(
+        (dx * dx) + (dy * dy)
+    );
+
+    if (
+        best === null ||
+        distance < best.distance
+    ) {
+        return {
+            node: currentNode,
+            distance
+        };
+    }
+
+    return best;
+};
+
+// UPDATED
+const shouldVisitOpposite = (
+    queryVector,
+    currentNode,
+    bestDistance
+) => {
+
+    const axis = currentNode.axis;
+
+    const axisDistance = Math.abs(
+        queryVector[axis] -
+        currentNode.vector.values[axis]
+    );
+
+    return axisDistance < bestDistance;
+};
+
+
 const printKDTree = (node, level = 0) => {
 
     if (!node) {
@@ -121,6 +166,10 @@ module.exports = {
     buildKDTree,
 
     search,
+
+    updateBest,
+
+    shouldVisitOpposite,
 
     printKDTree,
 };
