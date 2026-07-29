@@ -1,6 +1,9 @@
 const VectorDB = require("../database/vectorDB");
 const sampleData = require("../data/sampleData");
 
+
+const benchmarkData = require("../data/benchmarkData");
+
 const database = new VectorDB();
 
 
@@ -69,7 +72,7 @@ const searchVectors = (req, res) => {
 
         // UPDATED
         case "kd-tree":
-            results = database.search(
+            results = benchmarkDB.search(
                 vector,
                 k,
                 metric,
@@ -80,7 +83,7 @@ const searchVectors = (req, res) => {
         // UPDATED
         case "brute-force":
         default:
-            results = database.search(
+            results = benchmarkDB.search(
                 vector,
                 k,
                 metric,
@@ -103,7 +106,14 @@ const searchVectors = (req, res) => {
 // UPDATED
 const benchmarkSearch = (req, res) => {
 
-    const queryVector = database.getAll()[0].values;
+    // UPDATED
+const benchmarkDB = new VectorDB();
+
+benchmarkData.forEach((vector) => {
+    benchmarkDB.insert(vector);
+});
+
+const queryVector = benchmarkDB.getAll()[0].values;
 
     const k = 5;
 
@@ -119,7 +129,7 @@ const bruteStart = process.hrtime.bigint();
 
 for (let i = 0; i < runs; i++) {
 
-    database.search(
+    benchmarkDB.search(
         queryVector,
         k,
         "cosine",
@@ -135,7 +145,7 @@ const kdStart = process.hrtime.bigint();
 
 for (let i = 0; i < runs; i++) {
 
-    database.search(
+    benchmarkDB.search(
         queryVector,
         k,
         "cosine",
@@ -170,7 +180,7 @@ const averageKDTime =
 
         success: true,
 
-        datasetSize: database.size(),
+        datasetSize: benchmarkDB.size(),
 
         results: {
 
