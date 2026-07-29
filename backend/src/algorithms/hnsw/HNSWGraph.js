@@ -7,6 +7,11 @@ const {
 } = require("./HNSWNode");
 
 const {
+    findNearestNeighbors,
+    efSearch
+} = require("./utils");
+
+const {
     generateRandomLevel
 } = require("./utils");
 
@@ -121,67 +126,42 @@ const insert = (
 
 };
 
+const {
+    findNearestNeighbors,
+    efSearch
+} = require("./utils");
+
 const greedySearch = (
     graph,
-    queryVector
+    queryVector,
+    k = 5,
+    ef = 10
 ) => {
 
-    if (
-        graph.entryPoint === null
-    ) {
+    if (graph.entryPoint === null) {
 
-        return null;
+        return [];
 
     }
 
-    let currentNode =
-        graph.entryPoint;
+    const neighbors =
+        findNearestNeighbors(
+            graph,
+            queryVector,
+            ef
+        );
 
-    let improved = true;
+    const candidates =
+        efSearch(
+            neighbors,
+            ef
+        );
 
-    while (improved) {
-
-        improved = false;
-
-        const neighbors =
-            currentNode.neighbors.get(0) || [];
-
-        let bestDistance =
-            euclideanDistance(
-                queryVector,
-                currentNode.vector.values
-            );
-
-        for (const neighborId of neighbors) {
-
-            const neighbor =
-                graph.nodes.get(neighborId);
-
-            const distance =
-                euclideanDistance(
-                    queryVector,
-                    neighbor.vector.values
-                );
-
-            if (
-                distance < bestDistance
-            ) {
-
-                currentNode =
-                    neighbor;
-
-                bestDistance =
-                    distance;
-
-                improved = true;
-
-            }
-
-        }
-
-    }
-
-    return currentNode;
+    return candidates
+        .slice(0, k)
+        .map(
+            candidate => candidate.node.vector
+        );
 
 };
 
