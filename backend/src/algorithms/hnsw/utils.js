@@ -62,6 +62,16 @@ const findNearestNeighbors = (
 
 };
 
+const efSearch = (
+    neighbors,
+    ef = 10
+) => {
+
+    return neighbors
+        .slice(0, ef);
+
+};
+
 module.exports = {
 
     MAX_LEVEL,
@@ -70,6 +80,8 @@ module.exports = {
 
     generateRandomLevel,
 
-    findNearestNeighbors
+    findNearestNeighbors,
+
+    efSearch
 
 };
