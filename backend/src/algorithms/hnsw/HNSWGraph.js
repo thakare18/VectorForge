@@ -1,4 +1,8 @@
 const {
+    euclideanDistance
+} = require("../distance");
+
+const {
     createNode
 } = require("./HNSWNode");
 
@@ -117,6 +121,72 @@ const insert = (
 
 };
 
+const greedySearch = (
+    graph,
+    queryVector
+) => {
+
+    if (
+        graph.entryPoint === null
+    ) {
+
+        return null;
+
+    }
+
+    let currentNode =
+        graph.entryPoint;
+
+    let improved = true;
+
+    while (improved) {
+
+        improved = false;
+
+        const neighbors =
+            currentNode.neighbors.get(0) || [];
+
+        let bestDistance =
+            euclideanDistance(
+                queryVector,
+                currentNode.vector.values
+            );
+
+        for (const neighborId of neighbors) {
+
+            const neighbor =
+                graph.nodes.get(neighborId);
+
+            const distance =
+                euclideanDistance(
+                    queryVector,
+                    neighbor.vector.values
+                );
+
+            if (
+                distance < bestDistance
+            ) {
+
+                currentNode =
+                    neighbor;
+
+                bestDistance =
+                    distance;
+
+                improved = true;
+
+            }
+
+        }
+
+    }
+
+    return currentNode;
+
+};
+
+
+
 module.exports = {
 
     createGraph,
@@ -133,6 +203,8 @@ module.exports = {
 
     size,
 
-    insert
+    insert,
+
+    greedySearch
 
 };
