@@ -59,6 +59,8 @@ const searchVectors = (req, res) => {
         });
     }
 
+    
+const startTime = process.hrtime.bigint();
     // UPDATED
     let results;
 
@@ -85,11 +87,22 @@ const searchVectors = (req, res) => {
             break;
     }
 
+    // UPDATED
+const endTime = process.hrtime.bigint();
+
+// UPDATED
+const executionTime = Number(
+    endTime - startTime
+) / 1000000;
+
     res.status(200).json({
         success: true,
 
         // UPDATED
         algorithm,
+
+        // UPDATED
+executionTime: `${executionTime.toFixed(3)} ms`,
 
         count: results.length,
         data: results
