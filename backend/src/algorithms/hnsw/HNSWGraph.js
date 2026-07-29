@@ -1,67 +1,107 @@
-// UPDATED
+const {
+    createNode
+} = require("./HNSWNode");
 
-const HNSWNode = require("./HNSWNode");
+const createGraph = () => {
 
-class HNSWGraph {
+    return {
 
-    constructor() {
+        nodes: new Map(),
 
-        // All nodes
-        this.nodes = new Map();
+        entryPoint: null,
 
-        // Highest layer
-        this.maxLevel = 0;
+        maxLevel: 0
 
-        // Entry point
-        this.entryPoint = null;
+    };
 
-    }
+};
 
-    // UPDATED
-    addNode(node) {
+const addNode = (
+    graph,
+    vector,
+    level
+) => {
 
-        this.nodes.set(
-            node.vector.id,
-            node
-        );
+    const node = createNode(
+        vector,
+        level
+    );
 
-        if (
-            this.entryPoint === null
-        ) {
+    graph.nodes.set(
+        vector.id,
+        node
+    );
 
-            this.entryPoint = node;
+    if (graph.entryPoint === null) {
 
-            this.maxLevel = node.level;
+        graph.entryPoint = node;
 
-        }
-
-        if (
-            node.level >
-            this.maxLevel
-        ) {
-
-            this.maxLevel = node.level;
-
-            this.entryPoint = node;
-
-        }
+        graph.maxLevel = level;
 
     }
 
-    // UPDATED
-    getNode(id) {
+    if (level > graph.maxLevel) {
 
-        return this.nodes.get(id);
+        graph.maxLevel = level;
 
-    }
-
-    // UPDATED
-    size() {
-
-        return this.nodes.size;
+        graph.entryPoint = node;
 
     }
 
-}
+    return node;
 
-module.exports = HNSWGraph;
+};
+
+const getNode = (
+    graph,
+    id
+) => {
+
+    return graph.nodes.get(id);
+
+};
+
+const hasNode = (
+    graph,
+    id
+) => {
+
+    return graph.nodes.has(id);
+
+};
+
+const getEntryPoint = (graph) => {
+
+    return graph.entryPoint;
+
+};
+
+const getMaxLevel = (graph) => {
+
+    return graph.maxLevel;
+
+};
+
+const size = (graph) => {
+
+    return graph.nodes.size;
+
+};
+
+module.exports = {
+
+    createGraph,
+
+    addNode,
+
+    getNode,
+
+    hasNode,
+
+    getEntryPoint,
+
+    getMaxLevel,
+
+    size
+
+};
