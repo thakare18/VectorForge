@@ -2,6 +2,10 @@ const {
     createNode
 } = require("./HNSWNode");
 
+const {
+    generateRandomLevel
+} = require("./utils");
+
 const createGraph = () => {
 
     return {
@@ -86,6 +90,31 @@ const size = (graph) => {
 
     return graph.nodes.size;
 
+
+};
+
+const insert = (
+    graph,
+    vector
+) => {
+
+    const level =
+        generateRandomLevel();
+
+    const node =
+        createNode(
+            vector,
+            level
+        );
+
+    addNode(
+        graph,
+        vector,
+        level
+    );
+
+    return node;
+
 };
 
 module.exports = {
@@ -102,6 +131,8 @@ module.exports = {
 
     getMaxLevel,
 
-    size
+    size,
+
+    insert
 
 };
