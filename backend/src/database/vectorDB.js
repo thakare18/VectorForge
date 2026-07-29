@@ -1,3 +1,9 @@
+const {
+    createGraph,
+    insert,
+    greedySearch
+} = require("../algorithms/hnsw/HNSWGraph");
+
 const bruteForce = require("../algorithms/bruteForce");
 
 // UPDATED
@@ -12,13 +18,22 @@ class VectorDB {
 
         
         this.kdTree = null;
+
+        this.hnswGraph = createGraph();
     }
 
     insert(vector) {
         this.vectors.push(vector);
 
+
         // UPDATED
         this.buildKDTree();
+
+        insert(
+    this.hnswGraph,
+    vector
+);
+
         return vector;
 
         
@@ -51,6 +66,9 @@ class VectorDB {
         this.vectors = [];
         // UPDATED
         this.kdTree = null;
+
+        this.hnswGraph =
+    createGraph();
     }
 
     size() {
@@ -81,6 +99,26 @@ search(
             k
         );
     }
+
+    if (
+    algorithm === "hnsw"
+) {
+
+    const nearest =
+        greedySearch(
+            this.hnswGraph,
+            queryVector
+        );
+
+    if (!nearest) {
+
+        return [];
+
+    }
+
+    return [nearest.vector];
+
+}
 
     return bruteForce.search(
         this.vectors,
