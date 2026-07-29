@@ -59,8 +59,8 @@ const searchVectors = (req, res) => {
         });
     }
 
-    
-const startTime = process.hrtime.bigint();
+    // 
+//const startTime = process.hrtime.bigint();
     // UPDATED
     let results;
 
@@ -72,7 +72,8 @@ const startTime = process.hrtime.bigint();
             results = database.search(
                 vector,
                 k,
-                metric
+                metric,
+                algorithm
             );
             break;
 
@@ -82,18 +83,11 @@ const startTime = process.hrtime.bigint();
             results = database.search(
                 vector,
                 k,
-                metric
+                metric,
+                algorithm
             );
             break;
     }
-
-    // UPDATED
-const endTime = process.hrtime.bigint();
-
-// UPDATED
-const executionTime = Number(
-    endTime - startTime
-) / 1000000;
 
     res.status(200).json({
         success: true,
@@ -101,16 +95,113 @@ const executionTime = Number(
         // UPDATED
         algorithm,
 
-        // UPDATED
-executionTime: `${executionTime.toFixed(3)} ms`,
-
         count: results.length,
         data: results
     });
 };
 
+// UPDATED
+const benchmarkSearch = (req, res) => {
+
+    const queryVector = database.getAll()[0].values;
+
+    const k = 5;
+
+    // Brute Force
+    
+    
+
+    // UPDATED
+const runs = 1000;
+
+// UPDATED
+const bruteStart = process.hrtime.bigint();
+
+for (let i = 0; i < runs; i++) {
+
+    database.search(
+        queryVector,
+        k,
+        "cosine",
+        "brute-force"
+    );
+
+}
+
+const bruteEnd = process.hrtime.bigint();
+
+// UPDATED
+const kdStart = process.hrtime.bigint();
+
+for (let i = 0; i < runs; i++) {
+
+    database.search(
+        queryVector,
+        k,
+        "cosine",
+        "kd-tree"
+    );
+
+}
+
+const kdEnd = process.hrtime.bigint();
+
+// UPDATED
+const bruteTime = Number(
+    bruteEnd - bruteStart
+) / 1000000;
+
+// UPDATED
+const kdTime = Number(
+    kdEnd - kdStart
+) / 1000000;
+
+// UPDATED
+const averageBruteTime =
+    bruteTime / runs;
+
+// UPDATED
+const averageKDTime =
+    kdTime / runs;
+
+    
+
+    res.status(200).json({
+
+        success: true,
+
+        datasetSize: database.size(),
+
+        results: {
+
+            bruteForce: {
+
+            averageExecutionTime:
+`${averageBruteTime.toFixed(6)} ms`
+
+            },
+
+            kdTree: {
+
+               averageExecutionTime:
+`${averageKDTime.toFixed(6)} ms`
+                   
+
+            }
+
+        },
+
+        runs,
+
+speedImprovement:
+`${(averageBruteTime / averageKDTime).toFixed(2)}x`
+    });
+
+};
+
 module.exports = {
     getVectors,
     insertVector,
-    searchVectors
+    searchVectors,
+    benchmarkSearch
 };
