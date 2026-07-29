@@ -113,9 +113,12 @@ benchmarkData.forEach((vector) => {
     benchmarkDB.insert(vector);
 });
 
-const queryVector = benchmarkDB.getAll()[0].values;
+//const queryVector = benchmarkDB.getAll()[0].values;
 
     const k = 5;
+
+    const queryVector =
+    database.getAll()[0].values;
 
     // Brute Force
     
@@ -140,6 +143,19 @@ for (let i = 0; i < runs; i++) {
 
 const bruteEnd = process.hrtime.bigint();
 
+const hnswStart =
+    process.hrtime.bigint();
+
+database.search(
+    queryVector,
+    k,
+    "cosine",
+    "hnsw"
+);
+
+const hnswEnd =
+    process.hrtime.bigint();
+
 // UPDATED
 const kdStart = process.hrtime.bigint();
 
@@ -156,6 +172,8 @@ for (let i = 0; i < runs; i++) {
 
 const kdEnd = process.hrtime.bigint();
 
+
+
 // UPDATED
 const bruteTime = Number(
     bruteEnd - bruteStart
@@ -165,6 +183,11 @@ const bruteTime = Number(
 const kdTime = Number(
     kdEnd - kdStart
 ) / 1000000;
+
+const hnswTime =
+    Number(
+        hnswEnd - hnswStart
+    ) / 1000000;
 
 // UPDATED
 const averageBruteTime =
@@ -197,7 +220,14 @@ const averageKDTime =
 `${averageKDTime.toFixed(6)} ms`
                    
 
-            }
+            },
+
+            hnsw: {
+
+    executionTime:
+        `${hnswTime.toFixed(3)} ms`
+
+}
 
         },
 
