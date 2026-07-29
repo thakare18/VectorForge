@@ -103,6 +103,38 @@ const getLevels = (node) => {
 
 };
 
+const connectNodes = (
+    firstNode,
+    secondNode
+) => {
+
+    const maxLevel = Math.min(
+        firstNode.level,
+        secondNode.level
+    );
+
+    for (
+        let level = 0;
+        level <= maxLevel;
+        level++
+    ) {
+
+        addNeighbor(
+            firstNode,
+            level,
+            secondNode.vector.id
+        );
+
+        addNeighbor(
+            secondNode,
+            level,
+            firstNode.vector.id
+        );
+
+    }
+
+};
+
 module.exports = {
 
     createNode,
@@ -115,6 +147,8 @@ module.exports = {
 
     hasNeighbor,
 
-    getLevels
+    getLevels,
+
+    connectNodes
 
 };
