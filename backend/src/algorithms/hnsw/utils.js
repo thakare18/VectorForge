@@ -22,12 +22,54 @@ const generateRandomLevel = () => {
 
 };
 
+const {
+    euclideanDistance
+} = require("../distance");
+
+const findNearestNeighbors = (
+    graph,
+    queryVector,
+    k = 5
+) => {
+
+    const neighbors = [];
+
+    graph.nodes.forEach((node) => {
+
+        const distance =
+            euclideanDistance(
+                queryVector,
+                node.vector.values
+            );
+
+        neighbors.push({
+
+            node,
+
+            distance
+
+        });
+
+    });
+
+    neighbors.sort(
+        (first, second) =>
+            first.distance -
+            second.distance
+    );
+
+    return neighbors.slice(0, k);
+
+};
+
 module.exports = {
 
     MAX_LEVEL,
 
     LEVEL_PROBABILITY,
 
-    generateRandomLevel
+    generateRandomLevel,
+
+    findNearestNeighbors
 
 };
