@@ -161,12 +161,16 @@ const bruteEnd = process.hrtime.bigint();
 const hnswStart =
     process.hrtime.bigint();
 
-database.search(
-    queryVector,
-    k,
-    "cosine",
-    "hnsw"
-);
+for (let i = 0; i < runs; i++) {
+
+    benchmarkDB.search(
+        queryVector,
+        k,
+        "cosine",
+        "hnsw"
+    );
+
+}
 
 const hnswEnd =
     process.hrtime.bigint();
@@ -204,6 +208,9 @@ const hnswTime =
         hnswEnd - hnswStart
     ) / 1000000;
 
+    const averageHNSWTime =
+    hnswTime / runs;
+
 // UPDATED
 const averageBruteTime =
     bruteTime / runs;
@@ -239,8 +246,8 @@ const averageKDTime =
 
             hnsw: {
 
-    executionTime:
-        `${hnswTime.toFixed(3)} ms`
+    averageExecutionTime:
+        `${averageHNSWTime.toFixed(6)} ms`
 
 }
 
