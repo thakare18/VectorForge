@@ -7,6 +7,8 @@ const vectorRoutes = require("./vector.routes");
 
 const aiRoutes = require("./ai.routes");
 
+const pdfRoutes = require("./pdf.routes");
+
 const router = express.Router();
 
 router.get("/", apiInfo);
@@ -15,5 +17,8 @@ router.get("/", apiInfo);
 router.use("/vectors", vectorRoutes);
 
 router.use("/ai", aiRoutes);
+
+router.use( "/pdf", pdfRoutes
+);
 
 module.exports = router;
