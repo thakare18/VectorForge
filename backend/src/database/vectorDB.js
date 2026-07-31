@@ -22,22 +22,18 @@ class VectorDB {
         this.hnswGraph = createGraph();
     }
 
-    insert(vector) {
-        this.vectors.push(vector);
+   insert(vector) {
 
+    this.vectors.push(vector);
 
-        // UPDATED
-        this.buildKDTree();
+    insert(
+        this.hnswGraph,
+        vector
+    );
 
-        insert(
-    this.hnswGraph,
-    vector
-);
+    return vector;
 
-        return vector;
-
-        
-    }
+}
 
     getAll() {
         return this.vectors;
@@ -100,23 +96,17 @@ search(
         );
     }
 
-    if (
+    
+
+if (
     algorithm === "hnsw"
 ) {
 
-    const nearest =
-        greedySearch(
-            this.hnswGraph,
-            queryVector
-        );
-
-    if (!nearest) {
-
-        return [];
-
-    }
-
-    return [nearest.vector];
+    return greedySearch(
+        this.hnswGraph,
+        queryVector,
+        k
+    );
 
 }
 

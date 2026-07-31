@@ -11,6 +11,8 @@ sampleData.forEach((vector) => {
     database.insert(vector);
 });
 
+database.buildKDTree();
+
 const getVectors = (req, res) => {
     res.status(200).json({
         success: true,
@@ -72,7 +74,7 @@ const searchVectors = (req, res) => {
 
         // UPDATED
         case "kd-tree":
-            results = benchmarkDB.search(
+            results = database.search(
                 vector,
                 k,
                 metric,
@@ -80,10 +82,21 @@ const searchVectors = (req, res) => {
             );
             break;
 
+            case "hnsw":
+
+    results = database.search(
+        vector,
+        k,
+        metric,
+        algorithm
+    );
+
+    break;
+
         // UPDATED
         case "brute-force":
         default:
-            results = benchmarkDB.search(
+            results = database.search(
                 vector,
                 k,
                 metric,
@@ -112,6 +125,8 @@ const benchmarkDB = new VectorDB();
 benchmarkData.forEach((vector) => {
     benchmarkDB.insert(vector);
 });
+
+benchmarkDB.buildKDTree();
 
 //const queryVector = benchmarkDB.getAll()[0].values;
 

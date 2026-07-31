@@ -6,10 +6,10 @@ const {
     createNode
 } = require("./HNSWNode");
 
-const {
-    findNearestNeighbors,
-    efSearch
-} = require("./utils");
+// const {
+//     findNearestNeighbors,
+//     efSearch
+// } = require("./utils");
 
 const {
     generateRandomLevel
