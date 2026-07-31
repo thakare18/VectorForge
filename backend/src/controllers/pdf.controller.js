@@ -1,5 +1,6 @@
 const {
-    extractText
+    extractText,
+    createChunks
 } = require("../services/pdf.service");
 
 const uploadPDF = async (
@@ -22,17 +23,23 @@ const uploadPDF = async (
         }
 
         const text =
-            await extractText(
-                req.file.path
-            );
+    await extractText(
+        req.file.path
+    );
 
-        res.status(200).json({
+const chunks =
+    createChunks(text);
 
-            success: true,
+res.status(200).json({
 
-            text
+    success: true,
 
-        });
+    totalChunks:
+        chunks.length,
+
+    chunks
+
+});
 
     } catch (error) {
 
