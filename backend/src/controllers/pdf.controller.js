@@ -3,6 +3,13 @@ const {
     createChunks
 } = require("../services/pdf.service");
 
+const {
+    generateEmbedding
+} = require("../services/ai.service");
+
+const vectorDB =
+    require("../database/vector.database")
+
 const uploadPDF = async (
     req,
     res
@@ -30,14 +37,41 @@ const uploadPDF = async (
 const chunks =
     createChunks(text);
 
+for (let i = 0; i < chunks.length; i++) {
+
+    const embedding =
+        await generateEmbedding(
+            chunks[i]
+        );
+
+    vectorDB.insert({
+
+        id: `chunk-${i + 1}`,
+
+        values: embedding,
+
+        metadata: {
+
+            text: chunks[i]
+
+        }
+
+    });
+
+}
+
 res.status(200).json({
 
     success: true,
 
+    message:
+        "Document embedded successfully.",
+
     totalChunks:
         chunks.length,
 
-    chunks
+    storedVectors:
+        vectorDB.getAll().length
 
 });
 
