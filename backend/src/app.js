@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const morgan = require("morgan");
+const apiLimiter =require("./middleware/rateLimiter");
 
 const {
     swaggerUi,
@@ -16,6 +18,7 @@ const app = express();
 
 // Middlewares
 app.use(cors());
+app.use(morgan("dev"));
 app.use(express.json());
 
 
@@ -27,6 +30,8 @@ app.use(
 );
 
 // Routes
+
+app.use("/api", apiLimiter);
 app.use("/", routes);
 
 // Error Handling Middleware
