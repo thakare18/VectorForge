@@ -1,10 +1,8 @@
-const VectorDB = require("../database/vectorDB");
+const database = require("../database/vector.database");
 const sampleData = require("../data/sampleData");
-
-
 const benchmarkData = require("../data/benchmarkData");
 
-const database = new VectorDB();
+//const database = new VectorDB();
 
 
 sampleData.forEach((vector) => {
@@ -120,13 +118,13 @@ const searchVectors = (req, res) => {
 const benchmarkSearch = (req, res) => {
 
     // UPDATED
-const benchmarkDB = new VectorDB();
+database.clear();
 
 benchmarkData.forEach((vector) => {
-    benchmarkDB.insert(vector);
+    database.insert(vector);
 });
 
-benchmarkDB.buildKDTree();
+database.buildKDTree();
 
 //const queryVector = benchmarkDB.getAll()[0].values;
 
@@ -147,7 +145,7 @@ const bruteStart = process.hrtime.bigint();
 
 for (let i = 0; i < runs; i++) {
 
-    benchmarkDB.search(
+    database.search(
         queryVector,
         k,
         "cosine",
@@ -163,7 +161,7 @@ const hnswStart =
 
 for (let i = 0; i < runs; i++) {
 
-    benchmarkDB.search(
+    database.search(
         queryVector,
         k,
         "cosine",
@@ -180,7 +178,7 @@ const kdStart = process.hrtime.bigint();
 
 for (let i = 0; i < runs; i++) {
 
-    benchmarkDB.search(
+    database.search(
         queryVector,
         k,
         "cosine",
@@ -225,7 +223,7 @@ const averageKDTime =
 
         success: true,
 
-        datasetSize: benchmarkDB.size(),
+        datasetSize: database.size(),
 
         results: {
 

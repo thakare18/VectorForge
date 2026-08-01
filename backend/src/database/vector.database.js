@@ -129,4 +129,5 @@ if (
     }
 }
 
-module.exports = VectorDB;
+
+module.exports = new VectorDB();
