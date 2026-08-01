@@ -5,11 +5,11 @@ const benchmarkData = require("../data/benchmarkData");
 //const database = new VectorDB();
 
 
-sampleData.forEach((vector) => {
-    database.insert(vector);
-});
+// sampleData.forEach((vector) => {
+//     database.insert(vector);
+// });
 
-database.buildKDTree();
+// database.buildKDTree();
 
 const getVectors = (req, res) => {
     res.status(200).json({

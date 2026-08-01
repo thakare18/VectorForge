@@ -1,7 +1,10 @@
 const {
     generateResponse,
-    generateEmbedding
+    generateEmbedding,
+    generateAnswer
 } = require("../services/ai.service");
+
+const vectorDB = require("../database/vector.database");
 
 const chat = async (
     req,
@@ -27,7 +30,7 @@ const chat = async (
         }
 
         const answer =
-            await generateResponse(
+            await generateResponse( 
                 prompt
             );
 
@@ -106,9 +109,75 @@ const embed = async (
 
 };
 
+const ragChat = async (req, res) => {
+
+    try {
+
+        const { question } = req.body;
+
+        if (!question) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message: "Question is required."
+
+            });
+
+        }
+
+        const questionEmbedding =
+            await generateEmbedding(question);
+
+        const results =
+            vectorDB.search(
+
+                questionEmbedding,
+
+                5,
+
+                "cosine",
+
+                "brute-force"
+
+            );
+
+            console.log(results);
+
+        const context =
+            results
+                .map(result => result.metadata.text)
+                .join("\n\n");
+
+        res.status(200).json({
+
+            success: true,
+
+            retrievedChunks: results.length,
+
+            context
+
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+};
+
 module.exports = {
 
     chat,
-    embed
+    embed,
+    ragChat
 
 };

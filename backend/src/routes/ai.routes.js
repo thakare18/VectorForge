@@ -2,7 +2,8 @@ const express = require("express");
 
 const {
     chat,
-    embed
+    embed,
+    ragChat
 } = require("../controllers/ai.controller");
 
 const router =
@@ -16,6 +17,11 @@ router.post(
 router.post(
     "/embed",
     embed
+);
+
+router.post(
+    "/rag",
+    ragChat
 );
 
 module.exports = router;
