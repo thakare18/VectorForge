@@ -143,7 +143,7 @@ const ragChat = async (req, res) => {
 
             );
 
-            console.log(results);
+            
 
         const context =
     results
@@ -156,11 +156,22 @@ const answer =
         question
     );
 
+    const sources =
+    results.map(result => ({
+
+        id: result.id,
+
+        score: Number(result.score.toFixed(4))
+
+    }));
+
 res.status(200).json({
 
     success: true,
 
     retrievedChunks: results.length,
+
+    sources,
 
     answer
 

@@ -11,6 +11,14 @@ const {
 const router = express.Router();
 
 
+const validate =
+    require("../middleware/validate");
+
+const {
+    insertVectorSchema
+} = require("../validators/vector.validator");
+
+
 
 /**
  * @swagger
@@ -63,7 +71,12 @@ router.get("/", getVectors);
  *               success: true
  *               message: Vector inserted successfully.
  */
-router.post("/", insertVector);
+router.post(
+    "/",
+    validate(insertVectorSchema),
+    insertVector
+);
+
 
 
 /**
