@@ -146,19 +146,25 @@ const ragChat = async (req, res) => {
             console.log(results);
 
         const context =
-            results
-                .map(result => result.metadata.text)
-                .join("\n\n");
+    results
+        .map(result => result.metadata.text)
+        .join("\n\n");
 
-        res.status(200).json({
+const answer =
+    await generateAnswer(
+        context,
+        question
+    );
 
-            success: true,
+res.status(200).json({
 
-            retrievedChunks: results.length,
+    success: true,
 
-            context
+    retrievedChunks: results.length,
 
-        });
+    answer
+
+});
 
     } catch (error) {
 
