@@ -1,6 +1,10 @@
 const database = require("../database/vector.database");
 const sampleData = require("../data/sampleData");
 const benchmarkData = require("../data/benchmarkData");
+const {
+    successResponse,
+    errorResponse
+} = require("../utils/response");
 
 //const database = new VectorDB();
 
@@ -39,10 +43,11 @@ const insertVector = (req, res) => {
         metadata: metadata || {}
     });
 
-    res.status(201).json({
-        success: true,
-        message: "Vector inserted successfully."
-    });
+   return successResponse(
+    res,
+    201,
+    "Vector inserted successfully."
+);
 };
 
 // UPDATED
@@ -56,10 +61,11 @@ const searchVectors = (req, res) => {
     } = req.body;
 
     if (!Array.isArray(vector)) {
-        return res.status(400).json({
-            success: false,
-            message: "Vector must be an array."
-        });
+        return errorResponse(
+    res,
+    400,
+    "Vector must be an array."
+);
     }
 
     // 
