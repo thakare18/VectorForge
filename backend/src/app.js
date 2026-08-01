@@ -6,6 +6,9 @@ const {
     swaggerSpec
 } = require("./config/swagger");
 
+const errorHandler =
+    require("./middleware/errorHandler");
+
 
 const routes = require("./routes");
 
@@ -25,5 +28,8 @@ app.use(
 
 // Routes
 app.use("/", routes);
+
+// Error Handling Middleware
+app.use(errorHandler);
 
 module.exports = app;
