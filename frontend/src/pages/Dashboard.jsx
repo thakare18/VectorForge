@@ -11,28 +11,39 @@ function Dashboard() {
     */
     const [vectorCount, setVectorCount] = useState(0);
 
-    const stats = [
-        {
-            id: 1,
-            title: "Total Vectors",
-            value: vectorCount
-        },
-        {
-            id: 2,
-            title: "Uploaded PDFs",
-            value: "12"
-        },
-        {
-            id: 3,
-            title: "AI Queries",
-            value: "540"
-        },
-        {
-            id: 4,
-            title: "Search Algorithm",
-            value: "HNSW"
-        }
-    ];
+    const [loading, setLoading] = useState(true);
+
+const [lastUpdated, setLastUpdated] = useState("");
+
+   // UPDATED
+
+const stats = [
+
+    {
+        id: 1,
+        title: "Total Vectors",
+        value: loading ? "..." : vectorCount
+    },
+
+    {
+        id: 2,
+        title: "Vector Chunks",
+        value: loading ? "..." : vectorCount
+    },
+
+    {
+        id: 3,
+        title: "Embedding Model",
+        value: "text-embedding-004"
+    },
+
+    {
+        id: 4,
+        title: "Similarity",
+        value: "Cosine"
+    }
+
+];
 
     const activities = [
         {
@@ -56,27 +67,41 @@ function Dashboard() {
     /* 
        Fetch vectors when component loads
     */
-    useEffect(() => {
+    // UPDATED
 
-        const fetchVectors = async () => {
+const fetchVectors = async () => {
 
-            try {
+    setLoading(true);
 
-                const response = await getVectors();
+    try {
 
-                setVectorCount(response.data.count);
+        const response = await getVectors();
 
-            } catch (error) {
+        setVectorCount(response.data.count);
 
-                console.error(error);
+        setLastUpdated(
 
-            }
+            new Date().toLocaleTimeString()
 
-        };
+        );
 
-        fetchVectors();
+    } catch (error) {
 
-    }, []);
+        console.error(error);
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+};
+
+useEffect(() => {
+
+    fetchVectors();
+
+}, []);
 
     return (
         <Layout>
@@ -85,6 +110,52 @@ function Dashboard() {
                 title="Dashboard"
                 subtitle="Welcome to VectorForge AI Vector Database"
             />
+
+            {/* UPDATED */}
+
+<div className="flex justify-between items-center mt-6 mb-6">
+
+    <p className="text-slate-400">
+
+        Last Updated :
+
+        <span className="text-cyan-400 ml-2">
+
+            {
+
+                lastUpdated ||
+
+                "--"
+
+            }
+
+        </span>
+
+    </p>
+
+    <button
+
+        onClick={fetchVectors}
+
+        disabled={loading}
+
+        className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-600 text-black font-semibold px-5 py-2 rounded-lg transition-all"
+
+    >
+
+        {
+
+            loading
+
+                ? "Refreshing..."
+
+                : "Refresh Dashboard"
+
+        }
+
+    </button>
+
+</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 

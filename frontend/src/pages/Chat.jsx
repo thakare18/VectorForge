@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown"; 
 import remarkGfm from "remark-gfm"; 
+import toast from "react-hot-toast";
 
 import Layout from "../components/layout/Layout";
 import PageHeader from "../components/common/PageHeader";
@@ -35,6 +36,7 @@ const [copied, setCopied] = useState(false);
         const response = await askAI(question);
 
         setAnswer(response.data.answer);
+        toast.success("AI response generated.");
 
         setSources(response.data.sources || []);
 
@@ -47,8 +49,10 @@ const [copied, setCopied] = useState(false);
             error.response?.data?.message ||
 
             "Something went wrong."
+            
 
         );
+        toast.error("Failed to get AI response.");
 
     } finally {
 
@@ -67,6 +71,7 @@ const handleCopy = async () => {
     await navigator.clipboard.writeText(answer);
 
     setCopied(true);
+    toast.success("Answer copied successfully!");
 
     setTimeout(() => {
 
@@ -121,45 +126,126 @@ useEffect(() => {
                     className="w-full rounded-lg p-4 bg-slate-700 text-white outline-none"
                 />
 
-                <button
-                    onClick={handleAskAI}
-                    disabled={loading}
-                    className="mt-5 bg-cyan-500 hover:bg-cyan-600 px-6 py-3 rounded-lg font-semibold text-black"
-                >
-                    {
-                        loading
-                            ? "Thinking..."
-                            : "Ask AI"
-                    }
-                </button>
+                
+
+<button
+
+    onClick={handleAskAI}
+
+    disabled={loading}
+
+    className={`
+
+        mt-5
+
+        px-6
+
+        py-3
+
+        rounded-lg
+
+        font-semibold
+
+        transition-all
+
+        duration-300
+
+        ${
+
+            loading
+
+                ? "bg-slate-500 cursor-not-allowed"
+
+                : "bg-cyan-500 hover:bg-cyan-600 text-black"
+
+        }
+
+    `}
+
+>
+
+    {
+
+        loading
+
+            ? " AI is Thinking..."
+
+            : " Ask AI"
+
+    }
+
+</button>
 
                 {
 
                     answer && (
 
-                        <div className="mt-8 bg-slate-700 rounded-lg p-5">
+    // UPDATED
 
-                            <h2 className="text-xl font-semibold text-white mb-3">
+    <div
+        ref={answerRef}
+        className="mt-8 bg-slate-700 rounded-lg p-5"
+    >
 
-                                AI Answer
+        <div className="flex justify-between items-center mb-4">
 
-                            </h2>
+            <h2 className="text-xl font-semibold text-white">
 
-                            {/* UPDATED */}
+                AI Answer
 
-                            <div className="prose prose-invert max-w-none">
+            </h2>
 
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                >
-                                    {answer}
-                                </ReactMarkdown>
+            <div className="flex gap-3">
 
-                            </div>
+                <button
 
-                        </div>
+                    onClick={handleCopy}
 
-                    )
+                    className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white"
+
+                >
+
+                    {
+
+                        copied
+
+                            ? "Copied !"
+
+                            : "Copy"
+
+                    }
+
+                </button>
+
+                <button
+
+                    onClick={handleClear}
+
+                    className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+
+                >
+
+                    Clear
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div className="prose prose-invert max-w-none">
+
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+            >
+                {answer}
+            </ReactMarkdown>
+
+        </div>
+
+    </div>
+
+)
 
                 }
 
