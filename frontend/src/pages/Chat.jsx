@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown"; 
 import remarkGfm from "remark-gfm"; 
 
@@ -11,48 +11,96 @@ function Chat() {
     const [question, setQuestion] = useState("");
     const [answer, setAnswer] = useState("");
     const [loading, setLoading] = useState(false);
-
-    // UPDATED
     const [sources, setSources] = useState([]);
+
+
+const answerRef = useRef(null);
+
+const [copied, setCopied] = useState(false);
 
     const handleAskAI = async () => {
 
-        if (!question.trim()) {
-            return;
-        }
+    if (!question.trim()) {
+        return;
+    }
 
-        setLoading(true);
+    setLoading(true);
 
-        setAnswer("");
+    setAnswer("");
 
-        // UPDATED
-        setSources([]);
+    setSources([]);
 
-        try {
+    try {
 
-            const response = await askAI(question);
+        const response = await askAI(question);
 
-            setAnswer(response.data.answer);
+        setAnswer(response.data.answer);
 
-            // UPDATED
-            setSources(response.data.sources);
+        setSources(response.data.sources || []);
 
-        } catch (error) {
+    } catch (error) {
 
-            console.error(error);
+        console.error(error);
 
-            setAnswer(
-                error.response?.data?.message ||
-                "Something went wrong."
-            );
+        setAnswer(
 
-        } finally {
+            error.response?.data?.message ||
 
-            setLoading(false);
+            "Something went wrong."
 
-        }
+        );
 
-    };
+    } finally {
+
+        setLoading(false);
+
+    }
+
+};
+
+
+// UPDATED
+const handleCopy = async () => {
+
+    if (!answer) return;
+
+    await navigator.clipboard.writeText(answer);
+
+    setCopied(true);
+
+    setTimeout(() => {
+
+        setCopied(false);
+
+    }, 2000);
+
+};
+
+
+const handleClear = () => {
+
+    setQuestion("");
+
+    setAnswer("");
+
+    setSources([]);
+
+};
+
+
+useEffect(() => {
+
+    if (answer && answerRef.current) {
+
+        answerRef.current.scrollIntoView({
+
+            behavior: "smooth"
+
+        });
+
+    }
+
+}, [answer]);
 
     return (
 
