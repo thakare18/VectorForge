@@ -131,10 +131,10 @@ function Chat() {
 
                             {
 
-                                sources.map((source) => (
+                                sources.map((source, index) => (
 
                                     <div
-                                        key={source.id}
+                                        key={`${source.id}-${index}`}
                                         className="bg-slate-600 rounded-lg p-4 mb-3"
                                     >
 
