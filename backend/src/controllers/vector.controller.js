@@ -16,11 +16,43 @@ const {
 // database.buildKDTree();
 
 const getVectors = (req, res) => {
+
+    const totalVectors = database.size();
+
     res.status(200).json({
+
         success: true,
-        count: database.size(),
+
+        statistics: {
+
+            totalVectors,
+
+            totalChunks: totalVectors,
+
+            embeddingModel: "text-embedding-004",
+
+            searchAlgorithm: "Brute Force",
+
+            similarityMetric: "Cosine Similarity"
+
+        },
+
+        recentUploads: [
+
+            {
+
+                name: "Current Session",
+
+                chunks: totalVectors
+
+            }
+
+        ],
+
         data: database.getAll()
+
     });
+
 };
 
 const insertVector = (req, res) => {
