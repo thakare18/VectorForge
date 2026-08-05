@@ -40,15 +40,62 @@ const generateAnswer = async (
     question
 ) => {
 
-    const prompt = `
+   /* 
+    RAG Prompt
+*/
 
-You are an AI assistant.
+const prompt = `
 
-Answer ONLY using the context below.
+You are a professional AI assistant.
 
-If the answer is not available in the context, reply:
+Answer the user's question ONLY using the provided context.
+
+If the answer is not available in the context, reply exactly:
 
 "I couldn't find the answer in the uploaded document."
+
+Instructions:
+
+1. Never say:
+   - "The document states"
+
+2. Start directly with the topic name as a heading.
+
+3. Use this format whenever possible:
+
+## Topic Name
+
+**Full Form:**
+...
+
+**Definition:**
+...
+
+**Purpose:**
+- Point 1
+- Point 2
+- Point 3
+
+**Advantages:**
+- Point 1
+- Point 2
+
+**Disadvantages:**
+- Point 1
+- Point 2
+
+**Applications:**
+- Point 1
+- Point 2
+
+**Conclusion:**
+Short conclusion in 2-3 lines.
+
+4. If some sections are not available in the context, omit them.
+
+5. Never invent information that is not present in the context.
+
+6. Format the answer using proper Markdown headings, bold text and bullet points.
 
 Context:
 

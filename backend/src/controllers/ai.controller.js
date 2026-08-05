@@ -113,41 +113,53 @@ const ragChat = async (req, res) => {
 
     try {
 
-        const { question } = req.body;
+        const question = req.body.question?.trim();
 
-        if (!question) {
+if (!question) {
 
-            return res.status(400).json({
+    return res.status(400).json({
 
-                success: false,
+        success: false,
 
-                message: "Question is required."
+        message: "Question is required."
 
-            });
+    });
 
-        }
+}
 
         const questionEmbedding =
             await generateEmbedding(question);
 
-        const results =
-            vectorDB.search(
+       const results =
+    vectorDB.search(
 
-                questionEmbedding,
+        questionEmbedding,
 
-                5,
+        5,
 
-                "cosine",
+        "cosine",
 
-                "brute-force"
+        "brute-force"
 
-            );
+    );
 
-            
+/* If no similar vectors are found,
+   stop here and return response.*/
+if (results.length === 0) {
 
-        const context =
+    return res.status(404).json({
+
+        success: false,
+
+        message: "No relevant documents found."
+
+    });
+
+}
+
+const context =
     results
-        .map(result => result.metadata.text)
+        .map(result => result.metadata?.text || "")
         .join("\n\n");
 
 const answer =
@@ -177,17 +189,21 @@ res.status(200).json({
 
 });
 
-    } catch (error) {
+   } catch (error) {
 
-        res.status(500).json({
+    console.error("===== RAG ERROR =====");
+    console.error(error);
 
-            success: false,
+    res.status(500).json({
 
-            message: error.message
+        success: false,
 
-        });
+        message: error.message,
+        stack: error.stack
 
-    }
+    });
+
+}
 
 };
 
