@@ -130,7 +130,7 @@ if (!question) {
         const questionEmbedding =
             await generateEmbedding(question);
 
-       const results =
+      const results =
     vectorDB.search(
 
         questionEmbedding,
@@ -143,22 +143,34 @@ if (!question) {
 
     );
 
-/* If no similar vectors are found,
-   stop here and return response.*/
-if (results.length === 0) {
+// UPDATED
+const filteredResults = results.filter(
 
-    return res.status(404).json({
+    (result) => result.score >= 0.70
 
-        success: false,
+);
 
-        message: "No relevant documents found."
+// UPDATED
+if (filteredResults.length === 0) {
+
+    return res.status(200).json({
+
+        success: true,
+
+        retrievedChunks: 0,
+
+        sources: [],
+
+        answer:
+            "I couldn't find the answer in the uploaded document."
 
     });
 
 }
 
+// UPDATED
 const context =
-    results
+    filteredResults
         .map(result => result.metadata?.text || "")
         .join("\n\n");
 
@@ -168,8 +180,9 @@ const answer =
         question
     );
 
-    const sources =
-    results.map(result => ({
+// UPDATED
+const sources =
+    filteredResults.map(result => ({
 
         id: result.id,
 
@@ -181,13 +194,17 @@ res.status(200).json({
 
     success: true,
 
-    retrievedChunks: results.length,
+    // UPDATED
+    retrievedChunks:
+        filteredResults.length,
 
     sources,
 
     answer
 
 });
+
+
 
    } catch (error) {
 
