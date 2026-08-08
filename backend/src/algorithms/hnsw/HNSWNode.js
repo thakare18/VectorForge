@@ -105,33 +105,21 @@ const getLevels = (node) => {
 
 const connectNodes = (
     firstNode,
-    secondNode
+    secondNode,
+    level
 ) => {
 
-    const maxLevel = Math.min(
-        firstNode.level,
-        secondNode.level
+    addNeighbor(
+        firstNode,
+        level,
+        secondNode.vector.id
     );
 
-    for (
-        let level = 0;
-        level <= maxLevel;
-        level++
-    ) {
-
-        addNeighbor(
-            firstNode,
-            level,
-            secondNode.vector.id
-        );
-
-        addNeighbor(
-            secondNode,
-            level,
-            firstNode.vector.id
-        );
-
-    }
+    addNeighbor(
+        secondNode,
+        level,
+        firstNode.vector.id
+    );
 
 };
 

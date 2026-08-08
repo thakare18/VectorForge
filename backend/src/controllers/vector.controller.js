@@ -155,144 +155,501 @@ const searchVectors = (req, res) => {
 // UPDATED
 const benchmarkSearch = (req, res) => {
 
-    // UPDATED
-database.clear();
+    database.clear();
 
-benchmarkData.forEach((vector) => {
-    database.insert(vector);
-});
+    benchmarkData.forEach((vector) => {
 
-database.buildKDTree();
+        database.insert(vector);
 
-//const queryVector = benchmarkDB.getAll()[0].values;
+    });
 
-    const k = 5;
+    database.buildKDTree();
 
-    const queryVector =
-    database.getAll()[0].values;
+    const dataset =
+        database.getAll();
 
-    // Brute Force
-    
-    
+    if (dataset.length === 0) {
 
-    // UPDATED
-const runs = 1000;
+        return errorResponse(
+            res,
+            400,
+            "Benchmark dataset is empty."
+        );
 
-// UPDATED
-const bruteStart = process.hrtime.bigint();
+    }
 
-for (let i = 0; i < runs; i++) {
-
-    database.search(
-        queryVector,
-        k,
-        "cosine",
-        "brute-force"
+    const k = Math.min(
+        5,
+        dataset.length
     );
 
-}
+    const metric = "euclidean";
 
-const bruteEnd = process.hrtime.bigint();
+    const queryCount =
+        Math.min(
+            20,
+            dataset.length
+        );
 
-const hnswStart =
-    process.hrtime.bigint();
+    const runs = 100;
 
-for (let i = 0; i < runs; i++) {
+    const warmupRuns = 5;
 
-    database.search(
-        queryVector,
-        k,
-        "cosine",
+    const queryVectors =
+        dataset
+            .slice(0, queryCount);
+
+    const calculateRecall = (
+        expected,
+        actual
+    ) => {
+
+        if (
+            expected.length === 0
+        ) {
+
+            return 0;
+
+        }
+
+        const expectedIds =
+            new Set(
+                expected.map(
+                    vector => vector.id
+                )
+            );
+
+        const matches =
+            actual.filter(
+                vector =>
+                    expectedIds.has(
+                        vector.id
+                    )
+            ).length;
+
+        return matches /
+            expected.length;
+
+    };
+
+    const calculateMedian = (
+        values
+    ) => {
+
+        if (
+            values.length === 0
+        ) {
+
+            return 0;
+
+        }
+
+        const sorted =
+            [...values].sort(
+                (a, b) => a - b
+            );
+
+        const middle =
+            Math.floor(
+                sorted.length / 2
+            );
+
+        if (
+            sorted.length % 2 === 0
+        ) {
+
+            return (
+                sorted[middle - 1] +
+                sorted[middle]
+            ) / 2;
+
+        }
+
+        return sorted[middle];
+
+    };
+
+    const calculateStatistics = (
+        values
+    ) => {
+
+        if (
+            values.length === 0
+        ) {
+
+            return {
+
+                average: 0,
+
+                min: 0,
+
+                max: 0,
+
+                median: 0
+
+            };
+
+        }
+
+        const total =
+            values.reduce(
+                (sum, value) =>
+                    sum + value,
+                0
+            );
+
+        return {
+
+            average:
+                total / values.length,
+
+            min:
+                Math.min(...values),
+
+            max:
+                Math.max(...values),
+
+            median:
+                calculateMedian(values)
+
+        };
+
+    };
+
+    const groundTruths =
+        queryVectors.map(
+            query =>
+                database.search(
+                    query.values,
+                    k,
+                    metric,
+                    "brute-force"
+                )
+        );
+
+    const warmupAlgorithms = [
+        "brute-force",
+        "kd-tree",
         "hnsw"
-    );
+    ];
 
-}
+    for (
+        const algorithm of warmupAlgorithms
+    ) {
 
-const hnswEnd =
-    process.hrtime.bigint();
+        for (
+            let run = 0;
+            run < warmupRuns;
+            run++
+        ) {
 
-// UPDATED
-const kdStart = process.hrtime.bigint();
+            for (
+                const query of queryVectors
+            ) {
 
-for (let i = 0; i < runs; i++) {
+                if (
+                    algorithm === "hnsw"
+                ) {
 
-    database.search(
-        queryVector,
-        k,
-        "cosine",
-        "kd-tree"
-    );
+                    database.search(
+                        query,
+                        k,
+                        metric,
+                        algorithm
+                    );
 
-}
+                } else {
 
-const kdEnd = process.hrtime.bigint();
+                    database.search(
+                        query.values,
+                        k,
+                        metric,
+                        algorithm
+                    );
 
+                }
 
+            }
 
-// UPDATED
-const bruteTime = Number(
-    bruteEnd - bruteStart
-) / 1000000;
+        }
 
-// UPDATED
-const kdTime = Number(
-    kdEnd - kdStart
-) / 1000000;
+    }
 
-const hnswTime =
-    Number(
-        hnswEnd - hnswStart
-    ) / 1000000;
+    const benchmarkAlgorithm = (
+        algorithm
+    ) => {
 
-    const averageHNSWTime =
-    hnswTime / runs;
+        const times = [];
 
-// UPDATED
-const averageBruteTime =
-    bruteTime / runs;
+        for (
+            let run = 0;
+            run < runs;
+            run++
+        ) {
 
-// UPDATED
-const averageKDTime =
-    kdTime / runs;
+            const start =
+                process.hrtime.bigint();
 
-    
+            for (
+                const query of queryVectors
+            ) {
+
+                if (
+                    algorithm === "hnsw"
+                ) {
+
+                    database.search(
+                        query,
+                        k,
+                        metric,
+                        algorithm
+                    );
+
+                } else {
+
+                    database.search(
+                        query.values,
+                        k,
+                        metric,
+                        algorithm
+                    );
+
+                }
+
+            }
+
+            const end =
+                process.hrtime.bigint();
+
+            const elapsed =
+                Number(
+                    end - start
+                ) / 1000000;
+
+            const averagePerQuery =
+                elapsed /
+                queryVectors.length;
+
+            times.push(
+                averagePerQuery
+            );
+
+        }
+
+        return calculateStatistics(
+            times
+        );
+
+    };
+
+    const bruteStats =
+        benchmarkAlgorithm(
+            "brute-force"
+        );
+
+    const kdStats =
+        benchmarkAlgorithm(
+            "kd-tree"
+        );
+
+    const hnswStats =
+        benchmarkAlgorithm(
+            "hnsw"
+        );
+
+    const kdRecalls = [];
+
+    const hnswRecalls = [];
+
+    for (
+        let i = 0;
+        i < queryVectors.length;
+        i++
+    ) {
+
+        const query =
+            queryVectors[i];
+
+        const groundTruth =
+            groundTruths[i];
+
+        const kdResults =
+            database.search(
+                query.values,
+                k,
+                metric,
+                "kd-tree"
+            );
+
+        const hnswResults =
+            database.search(
+                query,
+                k,
+                metric,
+                "hnsw"
+            );
+
+        kdRecalls.push(
+            calculateRecall(
+                groundTruth,
+                kdResults
+            )
+        );
+
+        hnswRecalls.push(
+            calculateRecall(
+                groundTruth,
+                hnswResults
+            )
+        );
+
+    }
+
+    const averageRecall = (
+        values
+    ) => {
+
+        if (
+            values.length === 0
+        ) {
+
+            return 0;
+
+        }
+
+        return values.reduce(
+            (sum, value) =>
+                sum + value,
+            0
+        ) / values.length;
+
+    };
+
+    const kdRecall =
+        averageRecall(
+            kdRecalls
+        );
+
+    const hnswRecall =
+        averageRecall(
+            hnswRecalls
+        );
+
+    const algorithms = {
+
+        bruteForce:
+            bruteStats.average,
+
+        kdTree:
+            kdStats.average,
+
+        hnsw:
+            hnswStats.average
+
+    };
+
+    const fastest =
+        Object.entries(
+            algorithms
+        ).sort(
+            (first, second) =>
+                first[1] -
+                second[1]
+        )[0];
+
+    const fastestAlgorithm =
+        fastest[0];
+
+    const fastestTime =
+        fastest[1];
+
+    const speedImprovement =
+        algorithms.bruteForce /
+        fastestTime;
 
     res.status(200).json({
 
         success: true,
 
-        datasetSize: database.size(),
+        datasetSize:
+            dataset.length,
+
+        queryCount,
+
+        k,
+
+        metric,
+
+        runs,
+
+        warmupRuns,
 
         results: {
 
             bruteForce: {
 
-            averageExecutionTime:
-`${averageBruteTime.toFixed(6)} ms`
+                averageExecutionTime:
+                    `${bruteStats.average.toFixed(6)} ms`,
+
+                minExecutionTime:
+                    `${bruteStats.min.toFixed(6)} ms`,
+
+                maxExecutionTime:
+                    `${bruteStats.max.toFixed(6)} ms`,
+
+                medianExecutionTime:
+                    `${bruteStats.median.toFixed(6)} ms`,
+
+                recall:
+                    "100.00%"
 
             },
 
             kdTree: {
 
-               averageExecutionTime:
-`${averageKDTime.toFixed(6)} ms`
-                   
+                averageExecutionTime:
+                    `${kdStats.average.toFixed(6)} ms`,
+
+                minExecutionTime:
+                    `${kdStats.min.toFixed(6)} ms`,
+
+                maxExecutionTime:
+                    `${kdStats.max.toFixed(6)} ms`,
+
+                medianExecutionTime:
+                    `${kdStats.median.toFixed(6)} ms`,
+
+                recall:
+                    `${(kdRecall * 100).toFixed(2)}%`
 
             },
 
             hnsw: {
 
-    averageExecutionTime:
-        `${averageHNSWTime.toFixed(6)} ms`
+                averageExecutionTime:
+                    `${hnswStats.average.toFixed(6)} ms`,
 
-}
+                minExecutionTime:
+                    `${hnswStats.min.toFixed(6)} ms`,
+
+                maxExecutionTime:
+                    `${hnswStats.max.toFixed(6)} ms`,
+
+                medianExecutionTime:
+                    `${hnswStats.median.toFixed(6)} ms`,
+
+                recall:
+                    `${(hnswRecall * 100).toFixed(2)}%`
+
+            }
 
         },
 
-        runs,
+        fastestAlgorithm,
 
-speedImprovement:
-`${(averageBruteTime / averageKDTime).toFixed(2)}x`
+        speedImprovement:
+            `${speedImprovement.toFixed(2)}x`
+
     });
 
 };

@@ -1,18 +1,19 @@
 const {
-    euclideanDistance
-} = require("../distance");
-
-const {
-    createNode
+    createNode,
+    addNeighbor,
+    getNeighbors
 } = require("./HNSWNode");
 
-// const {
-//     findNearestNeighbors,
-//     efSearch
-// } = require("./utils");
-
 const {
-    generateRandomLevel
+    generateRandomLevel,
+    DEFAULT_M,
+    DEFAULT_EF_CONSTRUCTION,
+    DEFAULT_EF_SEARCH,
+    greedySearchLayer,
+    searchLayer,
+    searchLayerForInsertion,
+    selectNeighbors,
+    distanceBetween
 } = require("./utils");
 
 const createGraph = () => {
@@ -23,7 +24,15 @@ const createGraph = () => {
 
         entryPoint: null,
 
-        maxLevel: 0
+        maxLevel: 0,
+
+        M: DEFAULT_M,
+
+        efConstruction:
+            DEFAULT_EF_CONSTRUCTION,
+
+        efSearch:
+            DEFAULT_EF_SEARCH
 
     };
 
@@ -35,29 +44,24 @@ const addNode = (
     level
 ) => {
 
-    const node = createNode(
-        vector,
-        level
-    );
+    const node =
+        createNode(
+            vector,
+            level
+        );
 
     graph.nodes.set(
         vector.id,
         node
     );
 
-    if (graph.entryPoint === null) {
+    if (
+        graph.entryPoint === null
+    ) {
 
         graph.entryPoint = node;
 
         graph.maxLevel = level;
-
-    }
-
-    if (level > graph.maxLevel) {
-
-        graph.maxLevel = level;
-
-        graph.entryPoint = node;
 
     }
 
@@ -83,22 +87,141 @@ const hasNode = (
 
 };
 
-const getEntryPoint = (graph) => {
+const getEntryPoint = (
+    graph
+) => {
 
     return graph.entryPoint;
 
 };
 
-const getMaxLevel = (graph) => {
+const getMaxLevel = (
+    graph
+) => {
 
     return graph.maxLevel;
 
 };
 
-const size = (graph) => {
+const size = (
+    graph
+) => {
 
     return graph.nodes.size;
 
+};
+
+const pruneNeighbors = (
+    graph,
+    node,
+    level
+) => {
+
+    const neighborIds =
+        getNeighbors(
+            node,
+            level
+        );
+
+    if (
+        neighborIds.length <= graph.M
+    ) {
+
+        return;
+
+    }
+
+    const sorted =
+        neighborIds
+            .map(id => {
+
+                const neighbor =
+                    graph.nodes.get(id);
+
+                return {
+
+                    id,
+
+                    distance:
+                        distanceBetween(
+                            node.vector,
+                            neighbor.vector
+                        )
+
+                };
+
+            })
+            .filter(
+                item => item.distance !== Infinity
+            )
+            .sort(
+                (first, second) =>
+                    first.distance -
+                    second.distance
+            );
+
+    const selected =
+        sorted
+            .slice(
+                0,
+                graph.M
+            )
+            .map(
+                item => item.id
+            );
+
+    node.neighbors.set(
+        level,
+        selected
+    );
+
+};
+
+const connectAtLevel = (
+    graph,
+    node,
+    candidates,
+    level
+) => {
+
+    const selected =
+        selectNeighbors(
+            candidates,
+            graph.M
+        );
+
+    for (
+        const candidate of selected
+    ) {
+
+        const neighbor =
+            candidate.node;
+
+        addNeighbor(
+            node,
+            level,
+            neighbor.vector.id
+        );
+
+        addNeighbor(
+            neighbor,
+            level,
+            node.vector.id
+        );
+
+        pruneNeighbors(
+            graph,
+            neighbor,
+            level
+        );
+
+    }
+
+    pruneNeighbors(
+        graph,
+        node,
+        level
+    );
 
 };
 
@@ -107,65 +230,181 @@ const insert = (
     vector
 ) => {
 
+    if (
+        graph.nodes.has(vector.id)
+    ) {
+
+        return graph.nodes.get(
+            vector.id
+        );
+
+    }
+
     const level =
         generateRandomLevel();
 
     const node =
-        createNode(
+        addNode(
+            graph,
             vector,
             level
         );
 
-    addNode(
-        graph,
-        vector,
-        level
-    );
+    if (
+        graph.nodes.size === 1
+    ) {
+
+        graph.entryPoint = node;
+
+        graph.maxLevel = level;
+
+        return node;
+
+    }
+
+    let current =
+        graph.entryPoint;
+
+    for (
+        let currentLevel =
+            graph.maxLevel;
+
+        currentLevel > level;
+
+        currentLevel--
+    ) {
+
+        current =
+            greedySearchLayer(
+                graph,
+                vector,
+                current,
+                currentLevel
+            );
+
+    }
+
+    const lowestLevel =
+        Math.min(
+            level,
+            graph.maxLevel
+        );
+
+    for (
+        let currentLevel =
+            lowestLevel;
+
+        currentLevel >= 0;
+
+        currentLevel--
+    ) {
+
+        const candidates =
+            searchLayerForInsertion(
+                graph,
+                vector,
+                current,
+                currentLevel,
+                graph.efConstruction
+            );
+
+        connectAtLevel(
+            graph,
+            node,
+            candidates,
+            currentLevel
+        );
+
+        if (
+            candidates.length > 0
+        ) {
+
+            current =
+                candidates[0].node;
+
+        }
+
+    }
+
+    if (
+        level > graph.maxLevel
+    ) {
+
+        graph.maxLevel = level;
+
+        graph.entryPoint = node;
+
+    }
 
     return node;
 
 };
 
-const {
-    findNearestNeighbors,
-    efSearch
-} = require("./utils");
-
 const greedySearch = (
     graph,
     queryVector,
     k = 5,
-    ef = 10
+    ef = graph.efSearch
 ) => {
 
-    if (graph.entryPoint === null) {
+    if (
+        graph.entryPoint === null
+    ) {
 
         return [];
 
     }
 
-    const neighbors =
-        findNearestNeighbors(
+    let current =
+        graph.entryPoint;
+
+    for (
+        let level =
+            graph.maxLevel;
+
+        level > 0;
+
+        level--
+    ) {
+
+        current =
+            greedySearchLayer(
+                graph,
+                queryVector,
+                current,
+                level
+            );
+
+    }
+
+    const results =
+        searchLayer(
             graph,
             queryVector,
-            ef
+            current,
+            0,
+            Math.max(
+                ef,
+                k
+            )
         );
 
-    const candidates =
-        efSearch(
-            neighbors,
-            ef
-        );
-
-    return candidates
-        .slice(0, k)
+    return results
+        .sort(
+            (first, second) =>
+                first.distance -
+                second.distance
+        )
+        .slice(
+            0,
+            k
+        )
         .map(
-            candidate => candidate.node.vector
+            result =>
+                result.node.vector
         );
 
 };
-
-
 
 module.exports = {
 
