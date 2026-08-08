@@ -143,12 +143,15 @@ if (!question) {
 
     );
 
+    console.log("RAG SEARCH RESULTS:", results);
+
 // UPDATED
 const filteredResults = results.filter(
-
-    (result) => result.score >= 0.70
-
+    (result) => result.score >= 0.60
 );
+
+console.log("ALL RESULTS:", results);
+console.log("FILTERED RESULTS:", filteredResults);
 
 // UPDATED
 if (filteredResults.length === 0) {

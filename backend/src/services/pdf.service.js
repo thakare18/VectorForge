@@ -2,6 +2,22 @@ const fs = require("fs");
 
 const pdf = require("pdf-parse");
 
+// const extractText = async (
+//     filePath
+// ) => {
+
+//     const buffer =
+//         fs.readFileSync(
+//             filePath
+//         );
+
+//     const data =
+//         await pdf(buffer);
+
+//     return data.text;
+
+// };
+
 const extractText = async (
     filePath
 ) => {
@@ -14,8 +30,19 @@ const extractText = async (
     const data =
         await pdf(buffer);
 
-    return data.text;
+    console.log(
+        "PDF TEXT LENGTH:",
+        data.text.length
+    );
 
+    console.log(
+        "PDF TEXT PREVIEW:",
+        JSON.stringify(
+            data.text.slice(0, 500)
+        )
+    );
+
+    return data.text;
 };
 
 const createChunks = (
