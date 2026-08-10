@@ -88,8 +88,8 @@ const searchVectors = (req, res) => {
         vector,
         k = 5,
         metric = "cosine",
-         // UPDATED
-        algorithm = "brute-force"
+        algorithm = "brute-force",
+        includeTrace = false
     } = req.body;
 
     if (!Array.isArray(vector)) {
@@ -100,56 +100,31 @@ const searchVectors = (req, res) => {
 );
     }
 
-    // 
-//const startTime = process.hrtime.bigint();
-    // UPDATED
-    let results;
+    const withTrace = Boolean(includeTrace);
 
-    // UPDATED
-    switch (algorithm) {
-
-        // UPDATED
-        case "kd-tree":
-            results = database.search(
-                vector,
-                k,
-                metric,
-                algorithm
-            );
-            break;
-
-            case "hnsw":
-
-    results = database.search(
+    const output = database.search(
         vector,
         k,
         metric,
-        algorithm
+        algorithm,
+        withTrace
     );
 
-    break;
+    const results = withTrace ? output.results : output;
+    const trace = withTrace ? output.trace : undefined;
 
-        // UPDATED
-        case "brute-force":
-        default:
-            results = database.search(
-                vector,
-                k,
-                metric,
-                algorithm
-            );
-            break;
-    }
-
-    res.status(200).json({
+    const response = {
         success: true,
-
-        // UPDATED
         algorithm,
-
         count: results.length,
         data: results
-    });
+    };
+
+    if (trace) {
+        response.trace = trace;
+    }
+
+    res.status(200).json(response);
 };
 
 // UPDATED
