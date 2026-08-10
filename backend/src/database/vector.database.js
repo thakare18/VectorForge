@@ -76,46 +76,61 @@ search(
     queryVector,
     k = 5,
     metric = "cosine",
-    algorithm = "brute-force"
+    algorithm = "brute-force",
+    withTrace = false
 ) {
 
-    // UPDATED
-    if (
-        algorithm === "kd-tree"
-    ) {
+    const startTime = process.hrtime.bigint();
 
-        // UPDATED
+    let output;
+
+    if (algorithm === "kd-tree") {
+
         if (!this.kdTree) {
-            this.buildKDTree(); // Build the KD-tree if it hasnt been built yet
+            this.buildKDTree();
         }
 
-        return search(
+        output = search(
             this.kdTree,
             queryVector,
-            k
+            k,
+            withTrace
         );
+
+    } else if (algorithm === "hnsw") {
+
+        output = greedySearch(
+            this.hnswGraph,
+            queryVector,
+            k,
+            this.hnswGraph.efSearch,
+            withTrace
+        );
+
+    } else {
+
+        output = bruteForce.search(
+            this.vectors,
+            queryVector,
+            k,
+            metric,
+            withTrace
+        );
+
     }
 
-    
+    const endTime = process.hrtime.bigint();
+    const executionTime = Number(endTime - startTime) / 1e6;
 
-if (
-    algorithm === "hnsw"
-) {
+    if (!withTrace) {
+        return output;
+    }
 
-    return greedySearch(
-        this.hnswGraph,
-        queryVector,
-        k
-    );
+    const results = output.results;
+    const trace = output.trace || {};
+    trace.executionTime = `${executionTime.toFixed(4)} ms`;
 
-}
-
-    return bruteForce.search(
-        this.vectors,
-        queryVector,
-        k,
-        metric
-    );
+    return { results, trace };
 }
 
      // UPDATED
