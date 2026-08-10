@@ -86,35 +86,50 @@ const buildKDTree = (vectors) => {
 const search = (
     root,
     queryVector,
-    k = 5
+    k = 5,
+    withTrace = false
 ) => {
 
     if (!root) {
-        return [];
+        return withTrace ? { results: [], trace: { visitedNodes: [], searchPath: [], kdTreeSplits: [] } } : [];
     }
 
     const results = [];
+    const visitedNodes = [];
+    const kdTreeSplits = [];
 
     nearestNeighbor(
         root,
         queryVector,
         results,
-        k
+        k,
+        withTrace ? visitedNodes : null,
+        withTrace ? kdTreeSplits : null
     );
 
-// UPDATED
-return results.map((item) => {
-
-    return {
+    const mapped = results.map((item) => ({
         id: item.node.vector.id,
         values: item.node.vector.values,
         metadata: item.node.vector.metadata,
+        score: 1 / (1 + item.distance)
+    }));
 
-        
-        score: 1 / (1 + item.distance) // means that the closer the distance, the higher the score 
+    if (!withTrace) {
+        return mapped;
+    }
+
+    return {
+        results: mapped,
+        trace: {
+            visitedNodes,
+            searchPath: visitedNodes,
+            kdTreeSplits,
+            distances: results.map((item) => ({
+                id: item.node.vector.id,
+                distance: item.distance
+            }))
+        }
     };
-
-});
 };
 
 
@@ -202,14 +217,19 @@ const nearestNeighbor = (
     currentNode,
     queryVector,
     results,
-    k
+    k,
+    visitedNodes = null,
+    kdTreeSplits = null
 ) => {
 
     if (!currentNode) {
         return;
     }
 
-    // UPDATED
+    if (visitedNodes) {
+        visitedNodes.push(currentNode.vector.id);
+    }
+
     updateTopK(
         results,
         currentNode,
@@ -239,11 +259,23 @@ const nearestNeighbor = (
         oppositeBranch = currentNode.left;
     }
 
+    if (kdTreeSplits) {
+        const axis = currentNode.axis;
+        const splitVal = currentNode.vector.values[axis];
+        kdTreeSplits.push({
+            axis,
+            value: splitVal,
+            nodeId: currentNode.vector.id
+        });
+    }
+
     nearestNeighbor(
         nextBranch,
         queryVector,
         results,
-        k
+        k,
+        visitedNodes,
+        kdTreeSplits
     );
 
     // UPDATED
@@ -267,7 +299,9 @@ const nearestNeighbor = (
             oppositeBranch,
             queryVector,
             results,
-            k
+            k,
+            visitedNodes,
+            kdTreeSplits
         );
     }
 };
