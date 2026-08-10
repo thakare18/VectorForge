@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorForge</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Vector database lab</p>
+          <h1>VectorForge</h1>
+        </div>
+        <div class="status-row">
+          <span class="status-pill" id="healthStatus">Checking backend</span>
+          <a class="ghost-link" href="/api-docs" target="_blank" rel="noreferrer">API docs</a>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="sidebar">
+          <section class="panel">
+            <div class="panel-head">
+              <span>Search query</span>
+              <span id="dimensionBadge">0 dims</span>
+            </div>
+            <textarea id="queryText" rows="4" placeholder="Example: Explain binary tree, AI safety, sushi recipe...">Explain vector search using HNSW</textarea>
+            <div class="control-grid">
+              <label>
+                Algorithm
+                <select id="algorithm">
+                  <option value="hnsw">HNSW</option>
+                  <option value="kd-tree">KD-Tree</option>
+                  <option value="brute-force">Brute Force</option>
+                </select>
+              </label>
+              <label>
+                Metric
+                <select id="metric">
+                  <option value="cosine">Cosine</option>
+                  <option value="euclidean">Euclidean</option>
+                  <option value="manhattan">Manhattan</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Top-k <span id="topKValue">3</span>
+              <input id="topK" type="range" min="1" max="8" value="3">
+            </label>
+            <button class="primary-btn" id="searchBtn" type="button">Search vectors</button>
+            <p class="hint">Text is embedded first, then searched against your in-memory vector database.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <span>Insert demo vector</span>
+              <span>Manual</span>
+            </div>
+            <input id="insertTitle" type="text" placeholder="Vector title">
+            <textarea id="insertText" rows="3" placeholder="Text to embed and store"></textarea>
+            <select id="insertCategory">
+              <option>CS / Algorithms</option>
+              <option>Mathematics</option>
+              <option>Food & Cooking</option>
+              <option>Sports & Games</option>
+              <option>Documents / RAG</option>
+            </select>
+            <button class="secondary-btn" id="insertBtn" type="button">Insert vector</button>
+          </section>
+        </aside>
+
+        <section class="main-stage">
+          <section class="metrics">
+            <article>
+              <span>Total vectors</span>
+              <strong id="totalVectors">0</strong>
+            </article>
+            <article>
+              <span>Visited nodes</span>
+              <strong id="visitedCount">0</strong>
+            </article>
+            <article>
+              <span>Nearest score</span>
+              <strong id="bestScore">-</strong>
+            </article>
+            <article>
+              <span>Search mode</span>
+              <strong id="activeMode">HNSW</strong>
+            </article>
+          </section>
+
+          <section class="visual-panel">
+            <div class="canvas-head">
+              <div>
+                <p class="eyebrow">Algorithm visualizer</p>
+                <h2>Search path and nearest vectors</h2>
+              </div>
+              <div class="step-controls">
+                <button id="prevStep" type="button">Prev</button>
+                <button id="nextStep" type="button">Next</button>
+                <button id="playTrace" type="button">Play</button>
+                <button id="resetTrace" type="button">Reset</button>
+              </div>
+            </div>
+            <svg id="vectorCanvas" viewBox="0 0 900 520" role="img" aria-label="Vector search visualization"></svg>
+            <div class="legend">
+              <span><i class="dot cs"></i>CS</span>
+              <span><i class="dot math"></i>Math</span>
+              <span><i class="dot food"></i>Food</span>
+              <span><i class="dot sports"></i>Sports</span>
+              <span><i class="dot docs"></i>Docs</span>
+              <span><i class="query-mark"></i>Query</span>
+            </div>
+          </section>
+        </section>
+
+        <aside class="rightbar">
+          <section class="panel tabs-panel">
+            <div class="tabs" role="tablist">
+              <button class="tab active" data-tab="results" type="button">Search</button>
+              <button class="tab" data-tab="documents" type="button">Documents</button>
+              <button class="tab" data-tab="ai" type="button">Ask AI</button>
+            </div>
+
+            <div class="tab-page active" id="resultsTab">
+              <div class="panel-head">
+                <span>Top results</span>
+                <span id="resultCount">0 found</span>
+              </div>
+              <div id="resultsList" class="result-list"></div>
+            </div>
+
+            <div class="tab-page" id="documentsTab">
+              <div class="panel-head">
+                <span>PDF RAG</span>
+                <span id="uploadState">Ready</span>
+              </div>
+              <input id="pdfInput" type="file" accept="application/pdf">
+              <button class="secondary-btn" id="uploadBtn" type="button">Upload and embed</button>
+              <textarea id="ragQuestion" rows="3" placeholder="Ask from uploaded document..."></textarea>
+              <button class="primary-btn" id="ragBtn" type="button">Ask document</button>
+              <div id="ragAnswer" class="answer-box">Document answers will appear here.</div>
+            </div>
+
+            <div class="tab-page" id="aiTab">
+              <div class="panel-head">
+                <span>AI assistant</span>
+                <span>Gemini</span>
+              </div>
+              <textarea id="aiPrompt" rows="4" placeholder="Ask anything about vector databases..."></textarea>
+              <button class="primary-btn" id="aiBtn" type="button">Ask AI</button>
+              <div id="aiAnswer" class="answer-box">AI response will appear here.</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <span>Benchmark</span>
+              <button class="mini-btn" id="benchmarkBtn" type="button">Run</button>
+            </div>
+            <div id="benchmarkList" class="benchmark-list"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
