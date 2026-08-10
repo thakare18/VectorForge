@@ -344,19 +344,41 @@ const greedySearch = (
     graph,
     queryVector,
     k = 5,
-    ef = graph.efSearch
+    ef = graph.efSearch,
+    withTrace = false
 ) => {
 
     if (
         graph.entryPoint === null
     ) {
 
-        return [];
+        return withTrace
+            ? { results: [], trace: { visitedNodes: [], searchPath: [], hnswEdges: [] } }
+            : [];
 
     }
 
+    const visitedNodes = [];
+    const searchPath = [];
+    const hnswEdges = [];
+    const distances = [];
+
+    const recordVisit = (node) => {
+        const id = node.vector.id;
+        if (!visitedNodes.includes(id)) {
+            visitedNodes.push(id);
+        }
+        searchPath.push(id);
+        distances.push({
+            id,
+            distance: distanceBetween(queryVector, node.vector)
+        });
+    };
+
     let current =
         graph.entryPoint;
+
+    recordVisit(current);
 
     for (
         let level =
@@ -367,6 +389,7 @@ const greedySearch = (
         level--
     ) {
 
+        const prev = current;
         current =
             greedySearchLayer(
                 graph,
@@ -375,9 +398,18 @@ const greedySearch = (
                 level
             );
 
+        if (current !== prev) {
+            hnswEdges.push({
+                from: prev.vector.id,
+                to: current.vector.id,
+                level
+            });
+            recordVisit(current);
+        }
+
     }
 
-    const results =
+    const layerResults =
         searchLayer(
             graph,
             queryVector,
@@ -389,7 +421,11 @@ const greedySearch = (
             )
         );
 
-    return results
+    for (const item of layerResults) {
+        recordVisit(item.node);
+    }
+
+    const results = layerResults
         .sort(
             (first, second) =>
                 first.distance -
@@ -403,6 +439,20 @@ const greedySearch = (
             result =>
                 result.node.vector
         );
+
+    if (!withTrace) {
+        return results;
+    }
+
+    return {
+        results,
+        trace: {
+            visitedNodes,
+            searchPath,
+            hnswEdges,
+            distances
+        }
+    };
 
 };
 
