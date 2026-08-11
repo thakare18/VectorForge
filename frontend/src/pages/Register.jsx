@@ -4,9 +4,20 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import Button from "../components/common/Button";
 import Badge from "../components/common/Badge";
-import { loginSuccess, mockOAuthLogin } from "../store/slices/authSlice";
-import { isValidEmail, getPasswordStrength, validatePassword } from "../utils/validators";
+
+// UPDATED
+import { loginSuccess } from "../store/slices/authSlice";
+
+import {
+    isValidEmail,
+    getPasswordStrength,
+    validatePassword
+} from "../utils/validators";
+
 import { APP_TITLE } from "../utils/constants";
+
+// UPDATED
+import { register } from "../services/auth.service";
 
 function GoogleIcon() {
   return (
@@ -28,76 +39,176 @@ function GitHubIcon() {
 }
 
 export default function Register() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const strength = getPasswordStrength(password);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-    if (!isValidEmail(email)) {
-      toast.error("Enter a valid email");
-      return;
-    }
-    const errors = validatePassword(password);
-    if (errors.length) {
-      toast.error(errors[0]);
-      return;
-    }
-    setLoading(true);
-    setTimeout(() => {
-      dispatch(
-        loginSuccess({
-          user: { name, email, joinedAt: new Date().toISOString() },
-          token: "mock-jwt-register",
-        })
-      );
-      toast.success("Account created (mock auth)");
-      navigate("/");
-      setLoading(false);
-    }, 800);
-  };
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
-  return (
-    <div className="grid-bg flex min-h-screen items-center justify-center p-4">
-      <div className="grain-overlay" />
-      <div className="glass-card relative z-10 w-full max-w-md p-8 fade-in">
-        <h1 className="gradient-heading text-3xl font-bold">Create Account</h1>
-        <p className="mt-2 text-sm text-gray-400">Join {APP_TITLE}</p>
+    const strength = getPasswordStrength(password);
 
-        <div className="mt-6 space-y-3">
-          <Button variant="secondary" className="w-full" onClick={() => { dispatch(mockOAuthLogin("google")); navigate("/"); }}>
-            <GoogleIcon /> Continue with Google
-          </Button>
-          <Button variant="secondary" className="w-full" onClick={() => { dispatch(mockOAuthLogin("github")); navigate("/"); }}>
-            <GitHubIcon /> Continue with GitHub
-          </Button>
+    // UPDATED
+    const handleRegister = async (e) => {
+        e.preventDefault();
+
+        if (!name.trim()) {
+            toast.error("Enter your name");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            toast.error("Enter a valid email");
+            return;
+        }
+
+        const errors = validatePassword(password);
+
+        if (errors.length) {
+            toast.error(errors[0]);
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // UPDATED
+            const response = await register({
+                name,
+                email,
+                password
+            });
+
+            // UPDATED
+            dispatch(
+                loginSuccess({
+                    user: response.user,
+                    token: response.token
+                })
+            );
+
+            toast.success("Account created successfully");
+
+            navigate("/");
+        } catch (error) {
+            const message =
+                error.response?.data?.message ||
+                "Registration failed. Please try again.";
+
+            toast.error(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // UPDATED
+    const oauth = (provider) => {
+        toast(
+            `${provider === "google" ? "Google" : "GitHub"} registration will be connected next.`
+        );
+    };
+
+    return (
+        <div className="grid-bg flex min-h-screen items-center justify-center p-4">
+            <div className="grain-overlay" />
+
+            <div className="glass-card relative z-10 w-full max-w-md p-8 fade-in">
+                <h1 className="gradient-heading text-3xl font-bold">
+                    Create Account
+                </h1>
+
+                <p className="mt-2 text-sm text-gray-400">
+                    Join {APP_TITLE}
+                </p>
+
+                <div className="mt-6 space-y-3">
+                    <Button
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => oauth("google")}
+                    >
+                        <GoogleIcon />
+                        Continue with Google
+                    </Button>
+
+                    <Button
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => oauth("github")}
+                    >
+                        <GitHubIcon />
+                        Continue with GitHub
+                    </Button>
+                </div>
+
+                <form onSubmit={handleRegister} className="mt-6 space-y-4">
+                    <label className="block">
+                        <span className="font-mono text-xs uppercase text-gray-500">
+                            Name
+                        </span>
+
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm"
+                            required
+                        />
+                    </label>
+
+                    <label className="block">
+                        <span className="font-mono text-xs uppercase text-gray-500">
+                            Email
+                        </span>
+
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm"
+                            required
+                        />
+                    </label>
+
+                    <label className="block">
+                        <span className="font-mono text-xs uppercase text-gray-500">
+                            Password
+                        </span>
+
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm"
+                            required
+                        />
+
+                        {password && (
+                            <Badge className="mt-2">
+                                {strength.label}
+                            </Badge>
+                        )}
+                    </label>
+
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        loading={loading}
+                    >
+                        Register
+                    </Button>
+                </form>
+
+                <p className="mt-6 text-center text-sm text-gray-400">
+                    Already have an account?{" "}
+                    <Link
+                        to="/login"
+                        className="text-neon hover:underline"
+                    >
+                        Sign in
+                    </Link>
+                </p>
+            </div>
         </div>
-
-        <form onSubmit={handleRegister} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="font-mono text-xs uppercase text-gray-500">Name</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm" required />
-          </label>
-          <label className="block">
-            <span className="font-mono text-xs uppercase text-gray-500">Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm" required />
-          </label>
-          <label className="block">
-            <span className="font-mono text-xs uppercase text-gray-500">Password</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm" required />
-            {password && <Badge className="mt-2">{strength.label}</Badge>}
-          </label>
-          <Button type="submit" className="w-full" loading={loading}>Register</Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-400">
-          Already have an account? <Link to="/login" className="text-neon hover:underline">Sign in</Link>
-        </p>
-      </div>
-    </div>
-  );
+    );
 }
