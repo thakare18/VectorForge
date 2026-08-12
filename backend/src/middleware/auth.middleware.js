@@ -1,8 +1,11 @@
 const jwt = require("jsonwebtoken");
 
+const env = require("../config/env");
+
+// UPDATED
 const User = require("../models/User");
 
-const protect = async (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
@@ -17,13 +20,13 @@ const protect = async (req, res, next) => {
 
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET
+            env.JWT_SECRET
         );
 
-        const user = await User.findById(
-            decoded.userId
-        ).select("-password -resetPasswordToken -resetPasswordExpires");
+        // UPDATED
+        const user = await User.findById(decoded.userId);
 
+        // UPDATED
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -31,6 +34,7 @@ const protect = async (req, res, next) => {
             });
         }
 
+        // UPDATED
         req.user = user;
 
         next();
@@ -42,6 +46,4 @@ const protect = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    protect
-};
+module.exports = authMiddleware;
