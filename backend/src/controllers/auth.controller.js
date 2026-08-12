@@ -1,8 +1,24 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
-const crypto = require("crypto")
 const User = require("../models/User");
+
+// UPDATED
+const nodemailer = require("nodemailer");
+
+// UPDATED
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: true,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+    }
+});
+// const crypto = require("crypto")
+// const User = require("../models/User");
 
 const register = async (req, res) => {
     try {
@@ -164,6 +180,7 @@ const getMe = async (req, res) => {
 };
 
 
+// UPDATED
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -207,11 +224,69 @@ const forgotPassword = async (req, res) => {
         const resetUrl =
             `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
+        // UPDATED
+        console.log("Sending reset email to:", user.email);
+
+        // UPDATED
+        await transporter.sendMail({
+            from: `"VectorForge" <${process.env.SMTP_USER}>`,
+            to: user.email,
+            subject: "VectorForge - Password Reset",
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 30px;">
+                    <h2>VectorForge Password Reset</h2>
+
+                    <p>Hello ${user.name || "User"},</p>
+
+                    <p>
+                        We received a request to reset your VectorForge password.
+                    </p>
+
+                    <p>
+                        Click the button below to create a new password:
+                    </p>
+
+                    <a
+                        href="${resetUrl}"
+                        style="
+                            display: inline-block;
+                            padding: 12px 20px;
+                            background: #ccff00;
+                            color: #000000;
+                            text-decoration: none;
+                            border-radius: 6px;
+                            font-weight: bold;
+                        "
+                    >
+                        Reset Password
+                    </a>
+
+                    <p style="margin-top: 20px;">
+                        This reset link will expire in 15 minutes.
+                    </p>
+
+                    <p>
+                        If you did not request this password reset,
+                        you can safely ignore this email.
+                    </p>
+
+                    <p>
+                        Regards,<br>
+                        VectorForge Team
+                    </p>
+                </div>
+            `
+        });
+
+        // UPDATED
+        console.log("Reset email sent successfully");
+
+        // UPDATED
         res.status(200).json({
             success: true,
-            message: "Password reset link generated.",
-            resetUrl
+            message: "Password reset link sent to your email."
         });
+
     } catch (error) {
         console.error("Forgot password error:", error);
 
@@ -221,7 +296,6 @@ const forgotPassword = async (req, res) => {
         });
     }
 };
-
 // UPDATED
 const resetPassword = async (req, res) => {
     try {
