@@ -3,19 +3,29 @@ require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 const env = require("../config/env");
 
+// UPDATED
 const ai = new GoogleGenAI({
-    apiKey: env.GEMINI_API_KEY
+    apiKey: env.GEMINI_API_KEY,
+
+    httpOptions: {
+        timeout: 300000
+    }
 });
 
-const generateResponse = async (prompt) => {
+const generateResponse = async (
+    prompt
+) => {
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt
-    });
+    const response =
+        await ai.models.generateContent({
+
+            model: "gemini-3.6-flash",
+
+            contents: prompt
+
+        });
 
     return response.text;
-
 };
 
 const generateEmbedding = async (
@@ -32,7 +42,6 @@ const generateEmbedding = async (
         });
 
     return response.embeddings[0].values;
-
 };
 
 const generateAnswer = async (
@@ -40,84 +49,125 @@ const generateAnswer = async (
     question
 ) => {
 
-   /* 
+    /*
     RAG Prompt
-*/
+    */
 
-const prompt = `
+    const prompt = `
 
-You are a professional AI assistant.
+You are a professional RAG AI assistant for VectorForge.
 
-Answer the user's question ONLY using the provided context.
+Your task is to answer the user's question using ONLY the information provided in the context.
 
-If the answer is not available in the context, reply exactly:
+IMPORTANT RULES:
+
+1. Use only the provided context.
+2. Do not use outside knowledge.
+3. Do not invent, assume, or guess any information.
+4. If the answer is not available in the context, reply exactly:
 
 "I couldn't find the answer in the uploaded document."
 
-Instructions:
+5. Answer ONLY what the user asked.
+6. Keep every answer SHORT, CONCISE, and DIRECT.
+7. Do not generate unnecessary long explanations.
+8. Do not repeat the same information.
+9. Do not copy large portions of the context.
+10. If the question can be answered in a few lines, answer in a few lines.
+11. If the user asks "in short", give a very short answer.
+12. If the user asks for a list, provide only the relevant items.
+13. Use Markdown formatting when it improves readability.
+14. Use headings and bullet points only when they are useful.
+15. Do not add unnecessary sections such as Introduction, Advantages, Disadvantages, Applications, or Conclusion unless the question requires them.
+16. Prefer 5-8 bullet points maximum for list-based answers.
+17. Keep the generated answer within a safe output limit.
+18. Never generate a lengthy essay unless the user explicitly asks for a detailed explanation.
+19. Prioritize relevance and accuracy over completeness.
+20. Do not mention information that is not supported by the context.
 
-1. Never say:
-   - "The document states"
+ANSWER STYLE:
 
-2. Start directly with the topic name as a heading.
+- Direct
+- Concise
+- Easy to understand
+- Professional
+- Based strictly on the retrieved context
 
-3. Use this format whenever possible:
-
-## Topic Name
-
-**Full Form:**
-...
-
-**Definition:**
-...
-
-**Purpose:**
-- Point 1
-- Point 2
-- Point 3
-
-**Advantages:**
-- Point 1
-- Point 2
-
-**Disadvantages:**
-- Point 1
-- Point 2
-
-**Applications:**
-- Point 1
-- Point 2
-
-**Conclusion:**
-Short conclusion in 2-3 lines.
-
-4. If some sections are not available in the context, omit them.
-
-5. Never invent information that is not present in the context.
-
-6. Format the answer using proper Markdown headings, bold text and bullet points.
-
-Context:
+CONTEXT:
 
 ${context}
 
-Question:
+USER QUESTION:
 
 ${question}
 
+ANSWER:
 `;
 
-    const response =
-        await ai.models.generateContent({
+    // UPDATED
+    let lastError;
 
-            model: "gemini-3.6-flash",
+    // UPDATED
+    for (
+        let attempt = 1;
+        attempt <= 3;
+        attempt++
+    ) {
 
-            contents: prompt
+        try {
 
-        });
+            // UPDATED
+            console.log(
+                `Gemini answer attempt ${attempt}/3`
+            );
 
-    return response.text;
+            const response =
+                await ai.models.generateContent({
 
+                    model: "gemini-3.6-flash",
+
+                    contents: prompt
+
+                });
+
+            return response.text;
+
+        } catch (error) {
+
+            // UPDATED
+            lastError = error;
+
+            console.error(
+                `Gemini answer attempt ${attempt} failed:`,
+                error.message
+            );
+
+            // UPDATED
+            if (attempt < 3) {
+
+                const delay =
+                    Math.pow(2, attempt) * 1000;
+
+                console.log(
+                    `Retrying Gemini request in ${delay / 1000} seconds...`
+                );
+
+                await new Promise(
+                    (resolve) =>
+                        setTimeout(
+                            resolve,
+                            delay
+                        )
+                );
+
+            }
+
+        }
+
+    }
+
+    // UPDATED
+    throw lastError;
 };
 
 module.exports = {
