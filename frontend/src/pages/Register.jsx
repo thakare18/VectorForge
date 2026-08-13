@@ -104,11 +104,17 @@ export default function Register() {
 
     // UPDATED
     const oauth = (provider) => {
-        toast(
-            `${provider === "google" ? "Google" : "GitHub"} registration will be connected next.`
-        );
-    };
+    if (provider === "google") {
+        window.location.href =
+            "http://localhost:3000/api/auth/google";
+        return;
+    }
 
+    if (provider === "github") {
+        window.location.href =
+            "http://localhost:3000/api/auth/github";
+    }
+};
     return (
         <div className="grid-bg flex min-h-screen items-center justify-center p-4">
             <div className="grain-overlay" />
