@@ -44,6 +44,31 @@ const login = async (credentials) => {
     return response.data;
 };
 
+
+const forgotPassword = async (email) => {
+    const response = await axios.post(
+        `${API_URL}/forgot-password`,
+        {
+            email
+        }
+    );
+
+    return response.data;
+};
+
+// UPDATED
+const resetPassword = async (token, password) => {
+    const response = await axios.post(
+        `${API_URL}/reset-password`,
+        {
+            token,
+            password
+        }
+    );
+
+    return response.data;
+};
+
 const logout = () => {
     localStorage.removeItem("vectorforge_token");
     localStorage.removeItem("vectorforge_user");
@@ -70,6 +95,8 @@ const isAuthenticated = () => {
 export {
     register,
     login,
+    forgotPassword,
+    resetPassword,
     logout,
     getToken,
     getCurrentUser,
