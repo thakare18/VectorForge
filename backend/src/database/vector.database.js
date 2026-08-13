@@ -145,4 +145,4 @@ search(
 }
 
 
-module.exports = new VectorDB();
+module.exports = VectorDB;
