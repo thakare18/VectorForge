@@ -1,11 +1,19 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 
 const User = require("../models/User");
 
 // UPDATED
 const nodemailer = require("nodemailer");
+
+// UPDATED
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_CALLBACK_URL
+);
 
 // UPDATED
 const transporter = nodemailer.createTransport({
@@ -17,8 +25,6 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASSWORD
     }
 });
-// const crypto = require("crypto")
-// const User = require("../models/User");
 
 const register = async (req, res) => {
     try {
@@ -75,11 +81,13 @@ const register = async (req, res) => {
             message: "Registration successful.",
             token,
             user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                provider: user.provider
-            }
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    provider: user.provider,
+    avatar: user.avatar,
+    createdAt: user.createdAt
+}
         });
     } catch (error) {
         console.error("Register error:", error);
@@ -148,13 +156,14 @@ const login = async (req, res) => {
             success: true,
             message: "Login successful.",
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                provider: user.provider,
-                avatar: user.avatar
-            }
+           user: {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    provider: user.provider,
+    avatar: user.avatar,
+    createdAt: user.createdAt
+}
         });
     } catch (error) {
         console.error("Login error:", error);
@@ -174,13 +183,264 @@ const getMe = async (req, res) => {
             name: req.user.name,
             email: req.user.email,
             provider: req.user.provider,
-            avatar: req.user.avatar
+            avatar: req.user.avatar,
+            createdAt: req.user.createdAt
         }
     });
 };
 
+// UPDATED
+const googleLogin = (req, res) => {
+    const authUrl = googleClient.generateAuthUrl({
+        access_type: "offline",
+        scope: [
+            "openid",
+            "email",
+            "profile"
+        ],
+        prompt: "select_account"
+    });
+
+    res.redirect(authUrl);
+};
 
 // UPDATED
+const googleCallback = async (req, res) => {
+    try {
+        const { code } = req.query;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                message: "Google authorization code is missing."
+            });
+        }
+
+        const { tokens } = await googleClient.getToken(code);
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        const googleId = payload.sub;
+        const email = payload.email?.toLowerCase().trim();
+        const name = payload.name || "Google User";
+        const avatar = payload.picture || null;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Google account email was not provided."
+            });
+        }
+
+        let user = await User.findOne({
+            provider: "google",
+            providerId: googleId
+        });
+
+        if (!user) {
+            const existingEmailUser = await User.findOne({
+                email
+            });
+
+            if (existingEmailUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: `This email is already registered with ${existingEmailUser.provider} login.`
+                });
+            }
+
+            user = await User.create({
+                name,
+                email,
+                password: null,
+                provider: "google",
+                providerId: googleId,
+                avatar
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                userId: user._id
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "7d"
+            }
+        );
+
+        // UPDATED
+// UPDATED
+const frontendUrl =
+    `${process.env.FRONTEND_URL}/oauth/callback?token=${encodeURIComponent(token)}&provider=google`;
+
+res.redirect(frontendUrl);
+    } catch (error) {
+        console.error("Google OAuth error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Google authentication failed."
+        });
+    }
+};
+
+// UPDATED
+const githubLogin = (req, res) => {
+    const githubUrl =
+        "https://github.com/login/oauth/authorize" +
+        `?client_id=${process.env.GITHUB_CLIENT_ID}` +
+        `&redirect_uri=${encodeURIComponent(process.env.GITHUB_CALLBACK_URL)}` +
+        `&scope=user:email`;
+
+    res.redirect(githubUrl);
+};
+
+// UPDATED
+const githubCallback = async (req, res) => {
+    try {
+        const { code } = req.query;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                message: "GitHub authorization code is missing."
+            });
+        }
+
+        // UPDATED
+        const tokenResponse = await fetch(
+            "https://github.com/login/oauth/access_token",
+            {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    client_id: process.env.GITHUB_CLIENT_ID,
+                    client_secret: process.env.GITHUB_CLIENT_SECRET,
+                    code,
+                    redirect_uri: process.env.GITHUB_CALLBACK_URL
+                })
+            }
+        );
+
+        const tokenData = await tokenResponse.json();
+
+        if (!tokenData.access_token) {
+            return res.status(401).json({
+                success: false,
+                message: "Unable to get GitHub access token."
+            });
+        }
+
+        // UPDATED
+        const githubUserResponse = await fetch(
+            "https://api.github.com/user",
+            {
+                headers: {
+                    Authorization: `Bearer ${tokenData.access_token}`,
+                    Accept: "application/vnd.github+json",
+                    "User-Agent": "VectorForge"
+                }
+            }
+        );
+
+        const githubUser = await githubUserResponse.json();
+
+        // UPDATED
+        const emailResponse = await fetch(
+            "https://api.github.com/user/emails",
+            {
+                headers: {
+                    Authorization: `Bearer ${tokenData.access_token}`,
+                    Accept: "application/vnd.github+json",
+                    "User-Agent": "VectorForge"
+                }
+            }
+        );
+
+        const emails = await emailResponse.json();
+
+        const primaryEmail = emails.find(
+            (email) => email.primary && email.verified
+        );
+
+        const email = primaryEmail?.email?.toLowerCase().trim();
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Unable to get a verified GitHub email."
+            });
+        }
+
+        const githubId = String(githubUser.id);
+        const name = githubUser.name || githubUser.login || "GitHub User";
+        const avatar = githubUser.avatar_url || null;
+
+        // UPDATED
+        let user = await User.findOne({
+            provider: "github",
+            providerId: githubId
+        });
+
+        if (!user) {
+            const existingEmailUser = await User.findOne({
+                email
+            });
+
+            if (existingEmailUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: `This email is already registered with ${existingEmailUser.provider} login.`
+                });
+            }
+
+            user = await User.create({
+                name,
+                email,
+                password: null,
+                provider: "github",
+                providerId: githubId,
+                avatar
+            });
+        }
+
+        // UPDATED
+        const jwtToken = jwt.sign(
+            {
+                userId: user._id
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "7d"
+            }
+        );
+
+        // UPDATED
+// UPDATED
+const frontendUrl =
+    `${process.env.FRONTEND_URL}/oauth/callback?token=${encodeURIComponent(jwtToken)}&provider=github`;
+
+res.redirect(frontendUrl);
+
+    } catch (error) {
+        console.error("GitHub OAuth error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "GitHub authentication failed."
+        });
+    }
+};
+
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -224,10 +484,8 @@ const forgotPassword = async (req, res) => {
         const resetUrl =
             `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-        // UPDATED
         console.log("Sending reset email to:", user.email);
 
-        // UPDATED
         await transporter.sendMail({
             from: `"VectorForge" <${process.env.SMTP_USER}>`,
             to: user.email,
@@ -278,10 +536,8 @@ const forgotPassword = async (req, res) => {
             `
         });
 
-        // UPDATED
         console.log("Reset email sent successfully");
 
-        // UPDATED
         res.status(200).json({
             success: true,
             message: "Password reset link sent to your email."
@@ -296,6 +552,7 @@ const forgotPassword = async (req, res) => {
         });
     }
 };
+
 // UPDATED
 const resetPassword = async (req, res) => {
     try {
@@ -357,6 +614,9 @@ module.exports = {
     login,
     getMe,
     forgotPassword,
-    // UPDATED
-    resetPassword
+    resetPassword,
+    googleLogin, 
+    googleCallback,
+    githubLogin,
+    githubCallback
 };
