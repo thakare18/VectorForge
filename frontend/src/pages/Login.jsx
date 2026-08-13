@@ -4,8 +4,10 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import Button from "../components/common/Button";
 
+
+
 // UPDATED
-import { loginSuccess } from "../store/slices/authSlice";
+import { loginSuccess, mockOAuthLogin } from "../store/slices/authSlice";
 
 import { isValidEmail } from "../utils/validators";
 import { APP_TITLE } from "../utils/constants";
@@ -105,11 +107,21 @@ export default function Login() {
   };
 
   // UPDATED
-  const oauth = (provider) => {
-    toast(
-      `${provider === "google" ? "Google" : "GitHub"} login will be connected next.`,
-    );
-  };
+  // UPDATED
+// UPDATED
+const oauth = (provider) => {
+    if (provider === "google") {
+        window.location.href = "http://localhost:3000/api/auth/google";
+        return;
+    }
+
+    if (provider === "github") {
+        window.location.href = "http://localhost:3000/api/auth/github";
+        return;
+    }
+
+    toast.error(`${provider} login is not connected yet.`);
+};
 
   return (
     <div className="grid-bg flex min-h-screen items-center justify-center p-4">
@@ -124,13 +136,13 @@ export default function Login() {
 
         <div className="mt-6 space-y-3">
           <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => oauth("google")}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </Button>
+    variant="secondary"
+    className="w-full"
+    onClick={() => oauth("google")}
+>
+    <GoogleIcon />
+    Continue with Google
+</Button>
 
           <Button
             variant="secondary"
