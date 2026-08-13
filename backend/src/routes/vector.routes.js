@@ -1,9 +1,14 @@
 const express = require("express");
 
+const authMiddleware =
+    require("../middleware/auth.middleware");
+
 
 const {
     getVectors,
     insertVector,
+    deleteVectorById,
+    clearUserVectors,
     searchVectors,
     benchmarkSearch
 } = require("../controllers/vector.controller");
@@ -25,7 +30,7 @@ const {
  * /api/vectors:
  *   get:
  *     summary: Get all vectors
- *     description: Returns all vectors stored in the Vector Database.
+ *     description: Returns all vectors belonging to the authenticated user.
  *     tags:
  *       - Vectors
  *     responses:
@@ -45,7 +50,7 @@ const {
  *                   metadata:
  *                     category: AI
  */
-router.get("/", getVectors);
+router.get("/",authMiddleware, getVectors);
 
 
 /**
@@ -53,7 +58,7 @@ router.get("/", getVectors);
  * /api/vectors:
  *   post:
  *     summary: Insert a new vector
- *     description: Inserts a vector into the Vector Database.
+ *     description: Inserts a vector for the authenticated user.
  *     tags:
  *       - Vectors
  *     requestBody:
@@ -73,8 +78,71 @@ router.get("/", getVectors);
  */
 router.post(
     "/",
+    authMiddleware,
     validate(insertVectorSchema),
     insertVector
+);
+
+
+/**
+ * @swagger
+ * /api/vectors:
+ *   delete:
+ *     summary: Clear all user vectors
+ *     description: Deletes all vectors belonging to the authenticated user only.
+ *     tags:
+ *       - Vectors
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All vectors cleared successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: All vectors cleared successfully.
+ */
+router.delete(
+    "/",
+    authMiddleware,
+    clearUserVectors
+);
+
+
+/**
+ * @swagger
+ * /api/vectors/{id}:
+ *   delete:
+ *     summary: Delete a vector
+ *     description: Deletes a specific vector belonging to the authenticated user.
+ *     tags:
+ *       - Vectors
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Vector ID
+ *         example: vector-123
+ *     responses:
+ *       200:
+ *         description: Vector deleted successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Vector deleted successfully.
+ *       404:
+ *         description: Vector not found.
+ */
+router.delete(
+    "/:id",
+    authMiddleware,
+    deleteVectorById
 );
 
 
@@ -84,7 +152,7 @@ router.post(
  * /api/vectors/search:
  *   post:
  *     summary: Search similar vectors
- *     description: Performs Top-K vector similarity search using Brute Force, KD-Tree or HNSW.
+ *     description: Performs Top-K vector similarity search on the authenticated user's vectors.
  *     tags:
  *       - Vectors
  *     requestBody:
@@ -110,7 +178,7 @@ router.post(
  *               count: 5
  *               data: []
  */
-router.post("/search", searchVectors);
+router.post("/search", authMiddleware, searchVectors);
 
 
 /**
@@ -143,6 +211,7 @@ router.post("/search", searchVectors);
 
 router.get(
     "/benchmark",
+    authMiddleware,
     benchmarkSearch
 );
 
