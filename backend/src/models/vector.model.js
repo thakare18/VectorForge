@@ -5,7 +5,13 @@ const vectorSchema = new mongoose.Schema(
         vectorId: {
             type: String,
             required: true,
-            unique: true,
+            index: true
+        },
+
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
             index: true
         },
 
@@ -22,6 +28,11 @@ const vectorSchema = new mongoose.Schema(
     {
         timestamps: true
     }
+);
+
+vectorSchema.index(
+    { userId: 1, vectorId: 1 },
+    { unique: true }
 );
 
 module.exports = mongoose.model("Vector", vectorSchema);
