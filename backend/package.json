@@ -19,6 +19,7 @@
     "envalid": "^8.2.0",
     "express": "^4.21.2",
     "express-rate-limit": "^8.6.1",
+    "google-auth-library": "^11.0.2",
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.2",
