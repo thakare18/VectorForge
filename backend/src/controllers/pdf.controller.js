@@ -8,7 +8,15 @@ const {
 } = require("../services/ai.service");
 
 const vectorDB =
-    require("../database/vector.database")
+    require("../database/vector.database");
+
+// UPDATED
+const {
+    saveVector
+} = require("../services/vector.persistence.service");
+
+// UPDATED
+const { v4: uuidv4 } = require("uuid");
 
 const uploadPDF = async (
     req,
@@ -30,50 +38,80 @@ const uploadPDF = async (
         }
 
         const text =
-    await extractText(
-        req.file.path
-    );
+            await extractText(
+                req.file.path
+            );
 
-const chunks =
-    createChunks(text);
+        const chunks =
+            createChunks(text);
 
-for (let i = 0; i < chunks.length; i++) {
+        // UPDATED
+        const documentId =
+            uuidv4();
 
-    const embedding =
-        await generateEmbedding(
-            chunks[i]
-        );
+        for (
+            let i = 0;
+            i < chunks.length;
+            i++
+        ) {
 
-    vectorDB.insert({
+            const embedding =
+                await generateEmbedding(
+                    chunks[i]
+                );
 
-        id: `chunk-${i + 1}`,
+            // UPDATED
+            const vector = {
 
-        values: embedding,
+                id:
+                    `${documentId}-chunk-${i + 1}`,
 
-        metadata: {
+                values:
+                    embedding,
 
-            text: chunks[i]
+                metadata: {
+
+                    text:
+                        chunks[i],
+
+                    documentId,
+
+                    chunkIndex:
+                        i + 1
+
+                }
+
+            };
+
+            // UPDATED
+            vectorDB.insert(
+                vector
+            );
+
+            // UPDATED
+            await saveVector(
+                vector
+            );
 
         }
 
-    });
+        res.status(200).json({
 
-}
+            success: true,
 
-res.status(200).json({
+            message:
+                "Document embedded successfully.",
 
-    success: true,
+            // UPDATED
+            documentId,
 
-    message:
-        "Document embedded successfully.",
+            totalChunks:
+                chunks.length,
 
-    totalChunks:
-        chunks.length,
+            storedVectors:
+                vectorDB.getAll().length
 
-    storedVectors:
-        vectorDB.getAll().length
-
-});
+        });
 
     } catch (error) {
 
@@ -81,7 +119,8 @@ res.status(200).json({
 
             success: false,
 
-            message: error.message
+            message:
+                error.message
 
         });
 
