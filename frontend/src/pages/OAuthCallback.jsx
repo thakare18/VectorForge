@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import Loader from "../components/common/Loader";
 import { loginSuccess } from "../store/slices/authSlice";
+import { DEFAULT_BACKEND_URL } from "../utils/constants";
 
 export default function OAuthCallback() {
     const navigate = useNavigate();
@@ -41,8 +42,8 @@ export default function OAuthCallback() {
 
             try {
                 // UPDATED
-                const response = await axios.get(
-                    "http://localhost:3000/api/auth/me",
+               const response = await axios.get(
+    `${DEFAULT_BACKEND_URL}/api/auth/me`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
