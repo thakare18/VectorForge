@@ -1,4 +1,4 @@
-import { DEFAULT_BACKEND_URL } from "../utils/constants";
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
