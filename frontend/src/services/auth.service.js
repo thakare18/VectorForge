@@ -1,6 +1,7 @@
 import axios from "axios";
+import { DEFAULT_BACKEND_URL } from "../utils/constants";
 
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = `${DEFAULT_BACKEND_URL}/api/auth`;
 
 const register = async (userData) => {
     const response = await axios.post(

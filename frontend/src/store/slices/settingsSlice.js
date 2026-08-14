@@ -3,7 +3,7 @@ import { getItem, setItem } from "../../utils/storage";
 import { STORAGE_KEYS } from "../../utils/constants";
 
 const defaultSettings = {
-  backendUrl: "http://localhost:3000",
+  backendUrl: import.meta.env.VITE_API_URL || "http://localhost:3000",
   algorithm: "brute-force",
   metric: "cosine",
   topK: 5,
