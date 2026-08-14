@@ -14,7 +14,7 @@ import {
     validatePassword
 } from "../utils/validators";
 
-import { APP_TITLE } from "../utils/constants";
+import { APP_TITLE, DEFAULT_BACKEND_URL } from "../utils/constants";
 
 // UPDATED
 import { register } from "../services/auth.service";
@@ -103,16 +103,16 @@ export default function Register() {
     };
 
     // UPDATED
-    const oauth = (provider) => {
+const oauth = (provider) => {
     if (provider === "google") {
         window.location.href =
-            "http://localhost:3000/api/auth/google";
+            `${DEFAULT_BACKEND_URL}/api/auth/google`;
         return;
     }
 
     if (provider === "github") {
         window.location.href =
-            "http://localhost:3000/api/auth/github";
+            `${DEFAULT_BACKEND_URL}/api/auth/github`;
     }
 };
     return (
