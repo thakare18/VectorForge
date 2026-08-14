@@ -1,3 +1,4 @@
+import { DEFAULT_BACKEND_URL } from "../utils/constants";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -7,10 +8,10 @@ import Button from "../components/common/Button";
 
 
 // UPDATED
-import { loginSuccess, mockOAuthLogin } from "../store/slices/authSlice";
+import { loginSuccess } from "../store/slices/authSlice";
 
 import { isValidEmail } from "../utils/validators";
-import { APP_TITLE } from "../utils/constants";
+import { APP_TITLE, DEFAULT_BACKEND_URL } from "../utils/constants";
 
 // UPDATED
 import { login } from "../services/auth.service";
@@ -107,16 +108,15 @@ export default function Login() {
   };
 
   // UPDATED
-  // UPDATED
 // UPDATED
 const oauth = (provider) => {
     if (provider === "google") {
-        window.location.href = "http://localhost:3000/api/auth/google";
+        window.location.href = `${DEFAULT_BACKEND_URL}/api/auth/google`;
         return;
     }
 
     if (provider === "github") {
-        window.location.href = "http://localhost:3000/api/auth/github";
+        window.location.href = `${DEFAULT_BACKEND_URL}/api/auth/github`;
         return;
     }
 
