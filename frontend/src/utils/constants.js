@@ -1,7 +1,8 @@
 export const APP_TITLE = "VectorForge";
 export const APP_SUBTITLE = "Visual Vector Database and RAG Search Engine";
 
-export const DEFAULT_BACKEND_URL = "http://localhost:3000";
+export const DEFAULT_BACKEND_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const ALGORITHMS = [
   { value: "brute-force", label: "Brute Force" },
