@@ -23,19 +23,23 @@ const MAX_PORT_RETRIES = 5;
 const initializeDatabase = async () => {
     await connectDatabase();
 
-    console.log("MongoDB connected successfully.");
+   
 };
 
 function startServer(
     port,
     attempt = 0
 ) {
-    const server = app.listen(
+    const server =
+    app.listen(
         port,
+        "0.0.0.0",
         () => {
+
             console.log(
                 `Server listening on port ${port}`
             );
+
         }
     );
 
