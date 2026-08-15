@@ -584,7 +584,7 @@ The backend exposes the following API routes:
 | AI       | Gemini RAG                                                 | `/api/ai/rag`               |
 | PDF      | Upload PDF for ingestion                                   | `/api/pdf/upload`           |
 
-Do not publish sample request or response bodies until they are verified from the backend implementation.
+
 
 ## Setup and Configuration
 
@@ -600,15 +600,28 @@ Do not publish sample request or response bodies until they are verified from th
 Create a backend environment file and add the required values.
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_EMBEDDING_MODEL=gemini-embedding-001
-GEMINI_GENERATION_MODEL=gemini-3.6-flash
-MONGODB_URI=your_mongodb_connection_string_here
-PORT=TODO_confirm_backend_port
-FRONTEND_URL=TODO_confirm_frontend_url_if_used
-```
+PORT=3000
 
-Additional auth, email, OAuth, and JWT variables may be required by the backend. Add the exact names from the backend `.env.example` or config files before publishing.
+GEMINI_API_KEY=your_gemini_api_key_here
+
+MONGODB_URI=your_mongodb_connection_string_here
+
+JWT_SECRET=your_jwt_secret_here
+
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+
+GITHUB_CLIENT_ID=your_github_client_id_here
+GITHUB_CLIENT_SECRET=your_github_client_secret_here
+GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/github/callback
+
+FRONTEND_URL=http://localhost:5173
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your_email_here
+SMTP_PASSWORD=your_gmail_app_password_here
 
 ## Running Locally
 
