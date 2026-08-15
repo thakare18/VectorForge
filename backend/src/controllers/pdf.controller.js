@@ -7,8 +7,12 @@ const {
     generateEmbedding
 } = require("../services/ai.service");
 
-const vectorDB =
+const VectorDB =
     require("../database/vector.database");
+
+// UPDATED
+const vectorDB =
+    new VectorDB();
 
 // UPDATED
 const {
