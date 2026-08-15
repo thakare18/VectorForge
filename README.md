@@ -770,6 +770,6 @@ The Docker setup allows the frontend and backend applications to be built and ru
 
 Prathamesh Vinayak Thakare
 
-* GitHub: [https://github.com/thakare18and](https://github.com/thakare18and)
+* GitHub: [https://github.com/thakare18](https://github.com/thakare18)
 * LinkedIn: [https://www.linkedin.com/in/prathameshv-thakare/](https://www.linkedin.com/in/prathameshv-thakare/)
 * Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
