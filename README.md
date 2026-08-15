@@ -1,5 +1,3 @@
-
-````markdown
 # VectorForge
 
 VectorForge is a Node.js/Express backend with a Vite React frontend, using Gemini via Google GenAI for chat, embeddings, and RAG, and exposing vector search, benchmark, AI, auth, and PDF upload APIs.
@@ -32,40 +30,40 @@ The system includes a Node.js/Express backend, Vite React frontend, Gemini-based
 
 ```mermaid
 flowchart LR
-    User["User"] --> Frontend["React / Vite Frontend"]
-    Frontend --> API["Node.js / Express Backend"]
+    User["User"] --> Frontend["React / Vite Frontend"]
+    Frontend --> API["Node.js / Express Backend"]
 
-    API --> Upload["PDF Upload / Ingestion"]
-    Upload --> Extract["PDF Text Extraction"]
-    Extract --> Chunk["Text Chunking"]
-    Chunk --> Embed["Gemini Embeddings"]
-    Embed --> VectorDB["Custom In-Memory VectorDB"]
+    API --> Upload["PDF Upload / Ingestion"]
+    Upload --> Extract["PDF Text Extraction"]
+    Extract --> Chunk["Text Chunking"]
+    Chunk --> Embed["Gemini Embeddings"]
+    Embed --> VectorDB["Custom In-Memory VectorDB"]
 
-    VectorDB --> BF["Brute Force Search"]
-    VectorDB --> KD["KD Tree Search"]
-    VectorDB --> HNSW["HNSW Search"]
+    VectorDB --> BF["Brute Force Search"]
+    VectorDB --> KD["KD Tree Search"]
+    VectorDB --> HNSW["HNSW Search"]
 
-    VectorDB <--> Persistence["Vector Persistence Service"]
-    Persistence <--> MongoDB["MongoDB / Mongoose"]
+    VectorDB <--> Persistence["Vector Persistence Service"]
+    Persistence <--> MongoDB["MongoDB / Mongoose"]
 
-    Frontend --> Query["User Query"]
-    Query --> QueryEmbed["Query Embedding"]
-    QueryEmbed --> GeminiEmbed["Gemini Embedding API"]
-    GeminiEmbed --> VectorDB
+    Frontend --> Query["User Query"]
+    Query --> QueryEmbed["Query Embedding"]
+    QueryEmbed --> GeminiEmbed["Gemini Embedding API"]
+    GeminiEmbed --> VectorDB
 
-    VectorDB --> Context["Top-K Retrieved Chunks"]
-    Context --> RAG["RAG Context"]
-    RAG --> Gemini["Gemini Generation"]
-    Gemini --> Frontend
+    VectorDB --> Context["Top-K Retrieved Chunks"]
+    Context --> RAG["RAG Context"]
+    RAG --> Gemini["Gemini Generation"]
+    Gemini --> Frontend
 
-    VectorDB --> Bench["Benchmarking"]
-    Bench --> Metrics["Latency / Recall Results"]
-    Metrics --> Frontend
+    VectorDB --> Bench["Benchmarking"]
+    Bench --> Metrics["Latency / Recall Results"]
+    Metrics --> Frontend
 
-    API --> Auth["Auth / OAuth / JWT"]
-    Auth --> MongoDB
+    API --> Auth["Auth / OAuth / JWT"]
+    Auth --> MongoDB
 
-    API --> Swagger["Swagger API Documentation"]
+    API --> Swagger["Swagger API Documentation"]
 ````
 
 ## End-to-End Workflow
@@ -173,22 +171,22 @@ Expected RAG flow:
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant F as React Frontend
-    participant B as Express Backend
-    participant V as VectorDB
-    participant G as Gemini
+    participant U as User
+    participant F as React Frontend
+    participant B as Express Backend
+    participant V as VectorDB
+    participant G as Gemini
 
-    U->>F: Ask a question
-    F->>B: Send query
-    B->>G: Generate query embedding
-    G-->>B: Query vector
-    B->>V: Search top-k chunks
-    V-->>B: Relevant chunks
-    B->>G: Prompt with question + context
-    G-->>B: Generated answer
-    B-->>F: Answer + retrieval metadata
-    F-->>U: Display response
+    U->>F: Ask a question
+    F->>B: Send query
+    B->>G: Generate query embedding
+    G-->>B: Query vector
+    B->>V: Search top-k chunks
+    V-->>B: Relevant chunks
+    B->>G: Prompt with question + context
+    G-->>B: Generated answer
+    B-->>F: Answer + retrieval metadata
+    F-->>U: Display response
 ```
 
 ## Features
@@ -210,9 +208,9 @@ sequenceDiagram
 * Custom in-memory VectorDB.
 * Multiple vector search algorithms:
 
-  * Brute Force
-  * KD Tree
-  * HNSW
+  * Brute Force
+  * KD Tree
+  * HNSW
 * Benchmarking focused on latency and recall.
 * Persistent benchmark history.
 * RAG answer generation using Gemini.
@@ -304,11 +302,11 @@ The screenshot-provided benchmark run shows:
 * Fastest algorithm: `HNSW`
 * Speed improvement: `42.25x` faster than Brute Force baseline
 
-| Algorithm   |         Min |         Max |      Median |    Recall | Status  |
+| Algorithm   |         Min |         Max |      Median |    Recall | Status  |
 | ----------- | ----------: | ----------: | ----------: | --------: | ------- |
-| Brute Force | `3.5735 ms` | `6.2657 ms` | `4.0514 ms` | `100.00%` | Normal  |
-| KD-Tree     | `3.3583 ms` | `8.7318 ms` | `5.1129 ms` | `100.00%` | Normal  |
-| HNSW        | `0.0781 ms` | `0.2188 ms` | `0.0971 ms` |  `98.00%` | Fastest |
+| Brute Force | `3.5735 ms` | `6.2657 ms` | `4.0514 ms` | `100.00%` | Normal  |
+| KD-Tree     | `3.3583 ms` | `8.7318 ms` | `5.1129 ms` | `100.00%` | Normal  |
+| HNSW        | `0.0781 ms` | `0.2188 ms` | `0.0971 ms` |  `98.00%` | Fastest |
 
 Use these values as the documented benchmark snapshot. Re-run `GET /api/vectors/benchmark` when you need fresh numbers for the current machine, dataset, or code version.
 
@@ -398,11 +396,11 @@ Backend package metadata:
 
 ```json
 {
-  "name": "vectorforge",
-  "version": "1.0.0",
-  "type": "commonjs",
-  "main": "server.js",
-  "license": "MIT"
+  "name": "vectorforge",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "server.js",
+  "license": "MIT"
 }
 ```
 
@@ -426,168 +424,168 @@ The structure below is based on the provided VS Code screenshots and package met
 ```text
 VectorForge/
 +-- backend/
-|   +-- node_modules/
-|   +-- public/
-|   |   +-- index.html
-|   +-- src/
-|   |   +-- algorithms/
-|   |   |   +-- hnsw/
-|   |   |   |   +-- HNSWGraph.js
-|   |   |   |   +-- HNSWNode.js
-|   |   |   |   +-- utils.js
-|   |   |   +-- bruteForce.js
-|   |   |   +-- distance.js
-|   |   |   +-- kdTree.js
-|   |   +-- config/
-|   |   |   +-- constants.js
-|   |   |   +-- database.js
-|   |   |   +-- env.js
-|   |   |   +-- passport.js
-|   |   |   +-- swagger.js
-|   |   +-- controllers/
-|   |   |   +-- ai.controller.js
-|   |   |   +-- api.controller.js
-|   |   |   +-- auth.controller.js
-|   |   |   +-- health.controller.js
-|   |   |   +-- pdf.controller.js
-|   |   |   +-- vector.controller.js
-|   |   +-- data/
-|   |   |   +-- benchmarkData.js
-|   |   |   +-- sampleData.js
-|   |   +-- database/
-|   |   |   +-- vector.database.js
-|   |   +-- middleware/
-|   |   |   +-- auth.middleware.js
-|   |   |   +-- errorHandler.js
-|   |   |   +-- rateLimiter.js
-|   |   |   +-- validate.js
-|   |   +-- models/
-|   |   |   +-- User.js
-|   |   |   +-- Vector.js
-|   |   |   +-- vector.model.js
-|   |   +-- routes/
-|   |   |   +-- ai.routes.js
-|   |   |   +-- api.routes.js
-|   |   |   +-- auth.routes.js
-|   |   |   +-- index.js
-|   |   |   +-- pdf.routes.js
-|   |   |   +-- vector.routes.js
-|   |   +-- scripts/
-|   |   |   +-- generateBenchmarkData.js
-|   |   +-- services/
-|   |   |   +-- ai.service.js
-|   |   |   +-- pdf.service.js
-|   |   |   +-- vector.persistence.service.js
-|   |   +-- utils/
-|   |   |   +-- auth.js
-|   |   |   +-- helpers.js
-|   |   |   +-- response.js
-|   |   |   +-- vector.utils.js
-|   |   +-- validators/
-|   |       +-- vector.validators.js
-|   |   +-- app.js
-|   |   +-- server.js
-|   +-- uploads/
-|   +-- .dockerignore
-|   +-- .env
-|   +-- .gitignore
-|   +-- Dockerfile
-|   +-- package-lock.json
-|   +-- package.json
+|   +-- node_modules/
+|   +-- public/
+|   |   +-- index.html
+|   +-- src/
+|   |   +-- algorithms/
+|   |   |   +-- hnsw/
+|   |   |   |   +-- HNSWGraph.js
+|   |   |   |   +-- HNSWNode.js
+|   |   |   |   +-- utils.js
+|   |   |   +-- bruteForce.js
+|   |   |   +-- distance.js
+|   |   |   +-- kdTree.js
+|   |   +-- config/
+|   |   |   +-- constants.js
+|   |   |   +-- database.js
+|   |   |   +-- env.js
+|   |   |   +-- passport.js
+|   |   |   +-- swagger.js
+|   |   +-- controllers/
+|   |   |   +-- ai.controller.js
+|   |   |   +-- api.controller.js
+|   |   |   +-- auth.controller.js
+|   |   |   +-- health.controller.js
+|   |   |   +-- pdf.controller.js
+|   |   |   +-- vector.controller.js
+|   |   +-- data/
+|   |   |   +-- benchmarkData.js
+|   |   |   +-- sampleData.js
+|   |   +-- database/
+|   |   |   +-- vector.database.js
+|   |   +-- middleware/
+|   |   |   +-- auth.middleware.js
+|   |   |   +-- errorHandler.js
+|   |   |   +-- rateLimiter.js
+|   |   |   +-- validate.js
+|   |   +-- models/
+|   |   |   +-- User.js
+|   |   |   +-- Vector.js
+|   |   |   +-- vector.model.js
+|   |   +-- routes/
+|   |   |   +-- ai.routes.js
+|   |   |   +-- api.routes.js
+|   |   |   +-- auth.routes.js
+|   |   |   +-- index.js
+|   |   |   +-- pdf.routes.js
+|   |   |   +-- vector.routes.js
+|   |   +-- scripts/
+|   |   |   +-- generateBenchmarkData.js
+|   |   +-- services/
+|   |   |   +-- ai.service.js
+|   |   |   +-- pdf.service.js
+|   |   |   +-- vector.persistence.service.js
+|   |   +-- utils/
+|   |   |   +-- auth.js
+|   |   |   +-- helpers.js
+|   |   |   +-- response.js
+|   |   |   +-- vector.utils.js
+|   |   +-- validators/
+|   |       +-- vector.validators.js
+|   |   +-- app.js
+|   |   +-- server.js
+|   +-- uploads/
+|   +-- .dockerignore
+|   +-- .env
+|   +-- .gitignore
+|   +-- Dockerfile
+|   +-- package-lock.json
+|   +-- package.json
 |
 +-- frontend/
-|   +-- dist/
-|   |   +-- assets/
-|   |   +-- icons.svg
-|   |   +-- index.html
-|   |   +-- Logo.png
-|   |   +-- Logo1.png
-|   +-- node_modules/
-|   +-- package.json
-|   +-- package-lock.json
-|   +-- public/
-|   |   +-- icons.svg
-|   |   +-- Logo.png
-|   |   +-- Logo1.png
-|   +-- src/
-|   |   +-- assets/
-|   |   |   +-- hero.png
-|   |   |   +-- hypersearch.svg
-|   |   |   +-- vite.svg
-|   |   +-- components/
-|   |   |   +-- chat/
-|   |   |   |   +-- ChatInput.jsx
-|   |   |   |   +-- ChatMessage.jsx
-|   |   |   |   +-- SourceCard.jsx
-|   |   |   +-- common/
-|   |   |   |   +-- Badge.jsx
-|   |   |   |   +-- Button.jsx
-|   |   |   |   +-- Card.jsx
-|   |   |   |   +-- EmptyState.jsx
-|   |   |   |   +-- Loader.jsx
-|   |   |   |   +-- Modal.jsx
-|   |   |   |   +-- PageHeader.jsx
-|   |   |   |   +-- Skeleton.jsx
-|   |   |   |   +-- StatCard.jsx
-|   |   |   |   +-- Tabs.jsx
-|   |   |   +-- layout/
-|   |   |   |   +-- AppLayout.jsx
-|   |   |   |   +-- ProtectedRoute.jsx
-|   |   |   |   +-- Sidebar.jsx
-|   |   |   +-- search/
-|   |   |   |   +-- ResultCard.jsx
-|   |   |   +-- upload/
-|   |   |   |   +-- UploadBox.jsx
-|   |   |   +-- visualizer/
-|   |   |       +-- PlaybackControls.jsx
-|   |   |       +-- VectorCanvas.jsx
-|   |   +-- pages/
-|   |   |   +-- Benchmark.jsx
-|   |   |   +-- Chat.jsx
-|   |   |   +-- Dashboard.jsx
-|   |   |   +-- ForgotPassword.jsx
-|   |   |   +-- Login.jsx
-|   |   |   +-- NotFound.jsx
-|   |   |   +-- OAuthCallback.jsx
-|   |   |   +-- Profile.jsx
-|   |   |   +-- Register.jsx
-|   |   |   +-- ResetPassword.jsx
-|   |   |   +-- Search.jsx
-|   |   |   +-- Settings.jsx
-|   |   |   +-- Signup.jsx
-|   |   |   +-- Upload.jsx
-|   |   |   +-- Vectors.jsx
-|   |   |   +-- Visualizer.jsx
-|   |   +-- services/
-|   |   |   +-- aiService.js
-|   |   |   +-- api.js
-|   |   |   +-- authService.js
-|   |   |   +-- healthService.js
-|   |   |   +-- pdfService.js
-|   |   |   +-- vectorService.js
-|   |   +-- store/
-|   |   |   +-- authSlice.js
-|   |   |   +-- authStore.js
-|   |   |   +-- settingsSlice.js
-|   |   |   +-- uploadSlice.js
-|   |   +-- styles/
-|   |   |   +-- index.css
-|   |   +-- utils/
-|   |   |   +-- apiNormalizer.js
-|   |   |   +-- constants.js
-|   |   |   +-- formatters.js
-|   |   |   +-- storage.js
-|   |   |   +-- validators.js
-|   |   |   +-- vectorProjection.js
-|   |   +-- App.jsx
-|   |   +-- main.jsx
-|   +-- .env
-|   +-- .gitignore
-|   +-- Dockerfile
-|   +-- index.html
-|   +-- nginx.conf
-|   +-- vercel.json
-|   +-- vite.config.js
+|   +-- dist/
+|   |   +-- assets/
+|   |   +-- icons.svg
+|   |   +-- index.html
+|   |   +-- Logo.png
+|   |   +-- Logo1.png
+|   +-- node_modules/
+|   +-- package.json
+|   +-- package-lock.json
+|   +-- public/
+|   |   +-- icons.svg
+|   |   +-- Logo.png
+|   |   +-- Logo1.png
+|   +-- src/
+|   |   +-- assets/
+|   |   |   +-- hero.png
+|   |   |   +-- hypersearch.svg
+|   |   |   +-- vite.svg
+|   |   +-- components/
+|   |   |   +-- chat/
+|   |   |   |   +-- ChatInput.jsx
+|   |   |   |   +-- ChatMessage.jsx
+|   |   |   |   +-- SourceCard.jsx
+|   |   |   +-- common/
+|   |   |   |   +-- Badge.jsx
+|   |   |   |   +-- Button.jsx
+|   |   |   |   +-- Card.jsx
+|   |   |   |   +-- EmptyState.jsx
+|   |   |   |   +-- Loader.jsx
+|   |   |   |   +-- Modal.jsx
+|   |   |   |   +-- PageHeader.jsx
+|   |   |   |   +-- Skeleton.jsx
+|   |   |   |   +-- StatCard.jsx
+|   |   |   |   +-- Tabs.jsx
+|   |   |   +-- layout/
+|   |   |   |   +-- AppLayout.jsx
+|   |   |   |   +-- ProtectedRoute.jsx
+|   |   |   |   +-- Sidebar.jsx
+|   |   |   +-- search/
+|   |   |   |   +-- ResultCard.jsx
+|   |   |   +-- upload/
+|   |   |   |   +-- UploadBox.jsx
+|   |   |   +-- visualizer/
+|   |   |       +-- PlaybackControls.jsx
+|   |   |       +-- VectorCanvas.jsx
+|   |   +-- pages/
+|   |   |   +-- Benchmark.jsx
+|   |   |   +-- Chat.jsx
+|   |   |   +-- Dashboard.jsx
+|   |   |   +-- ForgotPassword.jsx
+|   |   |   +-- Login.jsx
+|   |   |   +-- NotFound.jsx
+|   |   |   +-- OAuthCallback.jsx
+|   |   |   +-- Profile.jsx
+|   |   |   +-- Register.jsx
+|   |   |   +-- ResetPassword.jsx
+|   |   |   +-- Search.jsx
+|   |   |   +-- Settings.jsx
+|   |   |   +-- Signup.jsx
+|   |   |   +-- Upload.jsx
+|   |   |   +-- Vectors.jsx
+|   |   |   +-- Visualizer.jsx
+|   |   +-- services/
+|   |   |   +-- aiService.js
+|   |   |   +-- api.js
+|   |   |   +-- authService.js
+|   |   |   +-- healthService.js
+|   |   |   +-- pdfService.js
+|   |   |   +-- vectorService.js
+|   |   +-- store/
+|   |   |   +-- authSlice.js
+|   |   |   +-- authStore.js
+|   |   |   +-- settingsSlice.js
+|   |   |   +-- uploadSlice.js
+|   |   +-- styles/
+|   |   |   +-- index.css
+|   |   +-- utils/
+|   |   |   +-- apiNormalizer.js
+|   |   |   +-- constants.js
+|   |   |   +-- formatters.js
+|   |   |   +-- storage.js
+|   |   |   +-- validators.js
+|   |   |   +-- vectorProjection.js
+|   |   +-- App.jsx
+|   |   +-- main.jsx
+|   +-- .env
+|   +-- .gitignore
+|   +-- Dockerfile
+|   +-- index.html
+|   +-- nginx.conf
+|   +-- vercel.json
+|   +-- vite.config.js
 |
 +-- README.md
 ```
@@ -596,24 +594,24 @@ VectorForge/
 
 The backend exposes the following API routes:
 
-| Area     | Responsibility                                             | Exact Route                 |
+| Area     | Responsibility                                             | Exact Route                 |
 | -------- | ---------------------------------------------------------- | --------------------------- |
-| Auth     | Register a new user                                        | `/api/auth/register`        |
-| Auth     | Login                                                      | `/api/auth/login`           |
-| Auth     | Google OAuth start                                         | `/api/auth/google`          |
-| Auth     | Google OAuth callback                                      | `/api/auth/google/callback` |
-| Auth     | GitHub OAuth start                                         | `/api/auth/github`          |
-| Auth     | GitHub OAuth callback                                      | `/api/auth/github/callback` |
-| Auth     | Forgot password                                            | `/api/auth/forgot-password` |
-| Auth     | Reset password                                             | `/api/auth/reset-password`  |
-| Auth     | Current user profile/session                               | `/api/auth/me`              |
-| VectorDB | Vector operations                                          | `/api/vectors`              |
-| VectorDB | Vector search                                              | `/api/vectors/search`       |
-| VectorDB | Dynamic benchmark comparing Brute Force, KD-Tree, and HNSW | `/api/vectors/benchmark`    |
-| AI       | Gemini chat                                                | `/api/ai/chat`              |
-| AI       | Gemini embedding                                           | `/api/ai/embed`             |
-| AI       | Gemini RAG                                                 | `/api/ai/rag`               |
-| PDF      | Upload PDF for ingestion                                   | `/api/pdf/upload`           |
+| Auth     | Register a new user                                        | `/api/auth/register`        |
+| Auth     | Login                                                      | `/api/auth/login`           |
+| Auth     | Google OAuth start                                         | `/api/auth/google`          |
+| Auth     | Google OAuth callback                                      | `/api/auth/google/callback` |
+| Auth     | GitHub OAuth start                                         | `/api/auth/github`          |
+| Auth     | GitHub OAuth callback                                      | `/api/auth/github/callback` |
+| Auth     | Forgot password                                            | `/api/auth/forgot-password` |
+| Auth     | Reset password                                             | `/api/auth/reset-password`  |
+| Auth     | Current user profile/session                               | `/api/auth/me`              |
+| VectorDB | Vector operations                                          | `/api/vectors`              |
+| VectorDB | Vector search                                              | `/api/vectors/search`       |
+| VectorDB | Dynamic benchmark comparing Brute Force, KD-Tree, and HNSW | `/api/vectors/benchmark`    |
+| AI       | Gemini chat                                                | `/api/ai/chat`              |
+| AI       | Gemini embedding                                           | `/api/ai/embed`             |
+| AI       | Gemini RAG                                                 | `/api/ai/rag`               |
+| PDF      | Upload PDF for ingestion                                   | `/api/pdf/upload`           |
 
 ## Setup and Configuration
 
@@ -675,8 +673,8 @@ Backend scripts:
 
 ```json
 {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js"
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js"
 }
 ```
 
@@ -692,9 +690,9 @@ Frontend scripts:
 
 ```json
 {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview"
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview"
 }
 ```
 
@@ -706,13 +704,13 @@ VectorForge is fully deployed using Vercel for the frontend and Render for the b
 
 The Vite React frontend is deployed on Vercel.
 
-| Setting          | Value           |
+| Setting          | Value           |
 | ---------------- | --------------- |
-| Project root     | `frontend`      |
-| Install command  | `npm install`   |
-| Build command    | `npm run build` |
-| Output directory | `dist`          |
-| Status           | `Deployed`      |
+| Project root     | `frontend`      |
+| Install command  | `npm install`   |
+| Build command    | `npm run build` |
+| Output directory | `dist`          |
+| Status           | `Deployed`      |
 
 ### Live Frontend
 
@@ -722,13 +720,13 @@ The Vite React frontend is deployed on Vercel.
 
 The Node.js/Express backend is deployed on Render.
 
-| Setting       | Value         |
+| Setting       | Value         |
 | ------------- | ------------- |
-| Project root  | `backend`     |
-| Runtime       | Node.js       |
+| Project root  | `backend`     |
+| Runtime       | Node.js       |
 | Build command | `npm install` |
-| Start command | `npm start`   |
-| Status        | `Deployed`    |
+| Start command | `npm start`   |
+| Status        | `Deployed`    |
 
 The backend API is configured and connected to the deployed Vercel frontend.
 
@@ -777,4 +775,3 @@ Prathamesh Vinayak Thakare
 * GitHub: [https://github.com/thakare18and](https://github.com/thakare18and)
 * LinkedIn: [https://www.linkedin.com/in/prathameshv-thakare/](https://www.linkedin.com/in/prathameshv-thakare/)
 * Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
-
