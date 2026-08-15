@@ -27,6 +27,7 @@ The system includes a Node.js/Express backend, Vite React frontend, Gemini-based
 
 ## Architecture
 
+```mermaid
 flowchart LR
     User["User"] --> Frontend["React / Vite Frontend"]
     Frontend --> API["Node.js / Express Backend"]
@@ -63,7 +64,7 @@ flowchart LR
 
     API --> Swagger["Swagger API Documentation"]
 
-    
+
 ## End-to-End Workflow
 
 ### 1. PDF Ingestion
