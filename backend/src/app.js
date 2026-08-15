@@ -17,6 +17,9 @@ const routes = require("./routes");
 
 const app = express();
 
+// UPDATED
+app.set("trust proxy", 1);
+
 
 const allowedOrigins = [
     process.env.FRONTEND_URL,
