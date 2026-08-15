@@ -712,9 +712,7 @@ The Vite React frontend is deployed on Vercel.
 | Output directory | `dist`          |
 | Status           | `Deployed`      |
 
-### Live Frontend
 
-[https://vector-forge-iota.vercel.app/](https://vector-forge-iota.vercel.app/)
 
 ### Backend Deployment on Render
 
