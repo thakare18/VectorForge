@@ -27,9 +27,8 @@ The system includes a Node.js/Express backend, Vite React frontend, Gemini-based
 
 ## Architecture
 
-```mermaid
 flowchart LR
-    User["User"] --> Frontend["React Frontend"]
+    User["User"] --> Frontend["React / Vite Frontend"]
     Frontend --> API["Node.js / Express Backend"]
 
     API --> Upload["PDF Upload / Ingestion"]
@@ -42,17 +41,27 @@ flowchart LR
     VectorDB --> KD["KD Tree Search"]
     VectorDB --> HNSW["HNSW Search"]
 
+    VectorDB <--> Persistence["Vector Persistence Service"]
+    Persistence <--> MongoDB["MongoDB / Mongoose"]
+
     Frontend --> Query["User Query"]
     Query --> QueryEmbed["Query Embedding"]
-    QueryEmbed --> VectorDB
+    QueryEmbed --> GeminiEmbed["Gemini Embedding API"]
+    GeminiEmbed --> VectorDB
+
     VectorDB --> Context["Top-K Retrieved Chunks"]
-    Context --> RAG["Gemini RAG Generation"]
-    RAG --> Frontend
+    Context --> RAG["RAG Context"]
+    RAG --> Gemini["Gemini Generation"]
+    Gemini --> Frontend
 
     VectorDB --> Bench["Benchmarking"]
     Bench --> Metrics["Latency / Recall Results"]
     Metrics --> Frontend
-```
+
+    API --> Auth["Auth / OAuth / JWT"]
+    Auth --> MongoDB
+
+    API --> Swagger["Swagger API Documentation"]
 
 ## End-to-End Workflow
 
@@ -75,13 +84,14 @@ Confirmed implementation details:
 
 ### 2. Chunking
 
-After extraction, the document text is split into chunks. Chunking makes the content suitable for embedding and retrieval.
+After extraction, the document text is split into fixed-size overlapping chunks. Chunking makes the content suitable for embedding and retrieval.
 
-Recommended README placeholders to update from code:
+Confirmed implementation details:
 
-* Chunk size: `TODO: confirm actual chunk size`
-* Chunk overlap: `TODO: confirm actual overlap`
-* Chunking method: `TODO: sentence, paragraph, fixed-size, recursive, or custom`
+- Chunk size: `500 characters`
+- Chunk overlap: `100 characters`
+- Chunking method: `Fixed-size character-based chunking with overlap`
+- Chunk step: `400 characters`
 
 ### 3. Embedding Generation
 
@@ -732,3 +742,10 @@ The Docker setup allows the frontend and backend applications to be built and ru
 6. Select or compare a vector search algorithm if the UI supports it.
 7. Review the generated Gemini answer and benchmark metrics.
 
+## Contact
+
+Prathamesh Vinayak Thakare
+
+- GitHub: [github.com/thakare18and](https://github.com/thakare18and)
+- LinkedIn: [linkedin.com/in/prathameshv-thakare](https://www.linkedin.com/in/prathameshv-thakare/)
+- Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
