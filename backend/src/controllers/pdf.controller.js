@@ -90,7 +90,8 @@ const uploadPDF = async (
 
             // UPDATED
             await saveVector(
-                vector
+                vector,
+                req.user._id
             );
 
         }
