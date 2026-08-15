@@ -1,3 +1,5 @@
+
+````markdown
 # VectorForge
 
 VectorForge is a Node.js/Express backend with a Vite React frontend, using Gemini via Google GenAI for chat, embeddings, and RAG, and exposing vector search, benchmark, AI, auth, and PDF upload APIs.
@@ -12,16 +14,17 @@ The project demonstrates how an uploaded PDF can move through a complete semanti
 6. Retrieve relevant chunks for a user query.
 7. Use Gemini to generate a grounded RAG response.
 
+> Storage note: MongoDB persistence is implemented through Mongoose. The custom VectorDB/index layer can still maintain runtime in-memory indexes for fast search and benchmarking while persisted application data is handled by MongoDB.
 
 ## Project Overview
 
 VectorForge is designed as an interview-friendly and learning-focused implementation of a vector search system. Instead of relying only on a managed vector database, the project exposes the core mechanics behind vector retrieval:
 
-* How documents are converted into chunks.
-* How chunks become embeddings.
-* How vectors are indexed.
-* How different search algorithms affect latency and recall.
-* How retrieval connects to a RAG answer generation flow.
+- How documents are converted into chunks.
+- How chunks become embeddings.
+- How vectors are indexed.
+- How different search algorithms affect latency and recall.
+- How retrieval connects to a RAG answer generation flow.
 
 The system includes a Node.js/Express backend, Vite React frontend, Gemini-based embeddings and generation through `@google/genai`, and a custom VectorDB layer that supports multiple search strategies.
 
@@ -63,7 +66,7 @@ flowchart LR
     Auth --> MongoDB
 
     API --> Swagger["Swagger API Documentation"]
-
+````
 
 ## End-to-End Workflow
 
@@ -79,10 +82,11 @@ Confirmed behavior:
 
 Confirmed implementation details:
 
-* PDF parser package: `pdf-parse`
-* Upload middleware: `multer`
-* Maximum file size: `TODO: confirm from upload middleware config`
-* Supported file types beyond `.pdf`: `TODO: confirm from upload validation`
+- PDF parser package: `pdf-parse`
+- Upload middleware: `multer`
+- Maximum file size: `Not explicitly configured`
+- Supported file types: `PDF (.pdf)`
+- File type validation: `Not explicitly enforced by Multer`
 
 ### 2. Chunking
 
@@ -90,10 +94,24 @@ After extraction, the document text is split into fixed-size overlapping chunks.
 
 Confirmed implementation details:
 
-- Chunk size: `500 characters`
-- Chunk overlap: `100 characters`
-- Chunking method: `Fixed-size character-based chunking with overlap`
-- Chunk step: `400 characters`
+* Chunk size: `500 characters`
+* Chunk overlap: `100 characters`
+* Chunking method: `Fixed-size character-based chunking with overlap`
+* Chunk step: `400 characters`
+
+The chunking implementation uses:
+
+```text
+start += chunkSize - overlap
+```
+
+Therefore:
+
+```text
+500 - 100 = 400 characters
+```
+
+Each new chunk starts 400 characters after the previous chunk, resulting in a 100-character overlap.
 
 ### 3. Embedding Generation
 
@@ -120,6 +138,15 @@ Current confirmed state:
 * MongoDB/Mongoose persistence is implemented.
 * Runtime vector indexes may still be loaded into memory for search and benchmark execution.
 * The benchmark UI notes that benchmark vectors are cleared and reloaded before the benchmark runs.
+* Vectors are persisted through the Vector Persistence Service.
+* Vector records store `vectorId`, `userId`, `values`, and `metadata`.
+
+The persistence layer supports:
+
+* Saving or updating vectors.
+* Loading vectors for a user.
+* Deleting individual vectors.
+* Clearing all vectors for a user.
 
 Not currently claimed:
 
@@ -284,14 +311,6 @@ The screenshot-provided benchmark run shows:
 | HNSW        | `0.0781 ms` | `0.2188 ms` | `0.0971 ms` |  `98.00%` | Fastest |
 
 Use these values as the documented benchmark snapshot. Re-run `GET /api/vectors/benchmark` when you need fresh numbers for the current machine, dataset, or code version.
-
-### Benchmark Result Format
-
-| Algorithm   | Dataset Size | Top-K |                                         Avg Latency |  Recall@K | Notes                       |
-| ----------- | -----------: | ----: | --------------------------------------------------: | --------: | --------------------------- |
-| Brute Force |      `10000` |   `5` | `TODO: calculate from benchmark response if needed` | `100.00%` | Exact search baseline       |
-| KD-Tree     |      `10000` |   `5` | `TODO: calculate from benchmark response if needed` | `100.00%` | Tree-based comparison       |
-| HNSW        |      `10000` |   `5` | `TODO: calculate from benchmark response if needed` |  `98.00%` | Fastest in current snapshot |
 
 ### Result Notes
 
@@ -596,8 +615,6 @@ The backend exposes the following API routes:
 | AI       | Gemini RAG                                                 | `/api/ai/rag`               |
 | PDF      | Upload PDF for ingestion                                   | `/api/pdf/upload`           |
 
-
-
 ## Setup and Configuration
 
 ### Prerequisites
@@ -634,6 +651,15 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_USER=your_email_here
 SMTP_PASSWORD=your_gmail_app_password_here
+```
+
+### Frontend Environment Variables
+
+If the frontend uses a Vite API base URL, configure it in the frontend environment:
+
+```env
+VITE_API_BASE_URL=your_backend_url_here
+```
 
 ## Running Locally
 
@@ -748,6 +774,7 @@ The Docker setup allows the frontend and backend applications to be built and ru
 
 Prathamesh Vinayak Thakare
 
-- GitHub: [github.com/thakare18and](https://github.com/thakare18and)
-- LinkedIn: [linkedin.com/in/prathameshv-thakare](https://www.linkedin.com/in/prathameshv-thakare/)
-- Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
+* GitHub: [https://github.com/thakare18and](https://github.com/thakare18and)
+* LinkedIn: [https://www.linkedin.com/in/prathameshv-thakare/](https://www.linkedin.com/in/prathameshv-thakare/)
+* Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
+
