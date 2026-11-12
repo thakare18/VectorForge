@@ -1,5 +1,8 @@
 node_modules
 dist
+.env
+.env.*
+test
 .git
 .gitignore
 npm-debug.log
