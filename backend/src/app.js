@@ -16,14 +16,29 @@ const errorHandler =
 const routes = require("./routes");
 
 const app = express();
+app.locals.ready = false;
+app.use((req, res, next) => {
+    if (app.locals.draining) return res.status(503).set("Connection", "close").json({ success: false, message: "Service restarting." });
+    next();
+});
 
 // UPDATED
-app.set("trust proxy", 1);
+const proxyHops = Number(process.env.TRUST_PROXY_HOPS || (process.env.RENDER ? 1 : 0));
+if (!Number.isInteger(proxyHops) || proxyHops < 0 || proxyHops > 5) throw new Error("Invalid TRUST_PROXY_HOPS");
+app.set("trust proxy", proxyHops || false);
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+    res.set("X-Content-Type-Options", "nosniff");
+    res.set("Referrer-Policy", "no-referrer");
+    if (process.env.NODE_ENV === "production") res.set("Strict-Transport-Security", "max-age=31536000");
+    if (req.path.startsWith("/api/")) res.set("Cache-Control", "no-store");
+    next();
+});
 
 
 const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    "http://localhost:5173"
+    require("./config/env").FRONTEND_URL,
+    ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173"])
 ].filter(Boolean);
 
 // UPDATED
@@ -35,7 +50,7 @@ app.use(
                 callback(null, true);
             } else {
                 callback(
-                    new Error("Not allowed by CORS")
+                    Object.assign(new Error("Not allowed by CORS"), { status: 403 })
                 );
             }
 
@@ -46,8 +61,9 @@ app.use(
 
 
 // Middlewares
-app.use(morgan("dev"));
-app.use(express.json());
+// Never log query strings: OAuth codes and reset links may be present.
+app.use(morgan((tokens, req, res) => [tokens.method(req, res), req.route?.path || "unmatched", tokens.status(req, res)].join(" ")));
+app.use(express.json({ limit: "128kb" }));
 
 
 // Swagger
@@ -58,8 +74,8 @@ app.use(
 );
 
 // Routes
-app.use("/api/auth", authRoutes);
 app.use("/api", apiLimiter);
+app.use("/api/auth", authRoutes);
 app.use("/", routes);
 
 
