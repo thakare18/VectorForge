@@ -1,3 +1,5 @@
+export const PUBLIC_API_ENV_NAMES = ["VITE_API_URL", "VITE_API_BASE_URL"];
+
 export function normalizeBackendUrl(value, { production = false } = {}) {
   let url;
   try { url = new URL(value); } catch { throw new Error("Backend URL must be a valid HTTP(S) origin."); }
@@ -18,18 +20,11 @@ export function validatePublicEnv(env) {
   if (env.PROD && env.NODE_ENV && env.NODE_ENV !== "production") {
     throw new Error("Production builds require NODE_ENV=production.");
   }
-  // Vercel injects these documented public framework values during builds.
-  // Keep exact names: a VITE_VERCEL_* wildcard would also admit accidental secrets.
-  // https://vercel.com/docs/environment-variables/framework-environment-variables
-  const allowed = new Set([
-    "VITE_API_URL", "VITE_API_BASE_URL",
-    ...[
-      "ENV", "TARGET_ENV", "URL", "BRANCH_URL", "PROJECT_PRODUCTION_URL", "DEPLOYMENT_ID", "PROJECT_ID",
-      "GIT_PROVIDER", "GIT_REPO_SLUG", "GIT_REPO_OWNER", "GIT_REPO_ID", "GIT_COMMIT_REF", "GIT_COMMIT_SHA",
-      "GIT_COMMIT_MESSAGE", "GIT_COMMIT_AUTHOR_LOGIN", "GIT_COMMIT_AUTHOR_NAME", "GIT_PREVIOUS_SHA", "GIT_PULL_REQUEST_ID"
-    ].map((name) => `VITE_VERCEL_${name}`)
-  ]);
+  const allowed = new Set(PUBLIC_API_ENV_NAMES);
   for (const key of Object.keys(env)) {
+    // Platform metadata is not application configuration. Vite's envPrefix uses
+    // PUBLIC_API_ENV_NAMES, so this entire namespace stays out of the client.
+    if (key.startsWith("VITE_VERCEL_")) continue;
     if (key.startsWith("VITE_") && !allowed.has(key)) throw new Error("Unsupported public environment variable: " + key);
   }
   return resolveBackendUrl(env);

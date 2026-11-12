@@ -12,6 +12,9 @@ const vercelMetadata = Object.fromEntries([
 test("Vercel-injected framework metadata does not reject production or preview builds or replace the backend origin", () => {
   assert.equal(validatePublicEnv({ PROD: true, VITE_API_URL: "https://backend.test",
     VITE_VERCEL_GIT_REPO_ID: "synthetic-repo-id" }), "https://backend.test");
+  assert.equal(validatePublicEnv({ PROD: true, VITE_API_URL: "https://backend.test",
+    VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG: "synthetic-observability-config",
+    VITE_VERCEL_FUTURE_METADATA: "synthetic-future-metadata" }), "https://backend.test");
   for (const target of ["production", "preview"]) {
     assert.equal(validatePublicEnv({ ...vercelMetadata, PROD: true, NODE_ENV: "production",
       VITE_VERCEL_ENV: target, VITE_VERCEL_URL: "frontend-deployment.vercel.app",
@@ -19,8 +22,10 @@ test("Vercel-injected framework metadata does not reject production or preview b
   }
 });
 
-test("allowing Vercel metadata does not allow arbitrary public secrets or similarly named variables", () => {
-  for (const key of ["VITE_GEMINI_KEY", "VITE_JWT_SECRET", "VITE_VERCEL_API_TOKEN", "VITE_VERCEL_SECRET", "VITE_VERCEL_GIT_REPO_ID_SECRET"]) {
+test("allowing Vercel metadata does not allow arbitrary application secrets or API-prefix lookalikes", () => {
+  // Platform-prefixed values are tested for exclusion from actual built output
+  // in vercel-build.test.js; application-prefixed secrets still fail closed.
+  for (const key of ["VITE_GEMINI_KEY", "VITE_JWT_SECRET", "VITE_API_URL_SECRET", "VITE_API_BASE_URL_TOKEN", "VITE_VERCELSECRET"]) {
     assert.throws(() => validatePublicEnv({ ...vercelMetadata, PROD: true, VITE_API_URL: "https://backend.test",
       [key]: "synthetic-private-value" }), (error) => error.message.includes(key) && !error.message.includes("synthetic-private-value"));
   }

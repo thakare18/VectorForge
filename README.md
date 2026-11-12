@@ -776,7 +776,7 @@ Use `VITE_API_URL` for the frontend backend origin. `VITE_API_BASE_URL` is accep
 
 ### Phase 3 production safeguards
 
-Production builds require a non-local HTTPS `VITE_API_URL` (legacy `VITE_API_BASE_URL` is fallback only). Browser-saved backend overrides are ignored in production; rebuild to change the backend. These two application variables and the explicitly listed public Vercel framework metadata names in `frontend/src/utils/backendUrl.js` are allowed. Vercel injects metadata such as `VITE_VERCEL_GIT_REPO_ID` automatically; it does not replace the backend URL. Other `VITE_` names remain rejected, since their values are public. Development retains the local backend setting.
+Production builds require a non-local HTTPS `VITE_API_URL` (legacy `VITE_API_BASE_URL` is fallback only). Browser-saved backend overrides are ignored in production; rebuild to change the backend. Vite's `envPrefix` is restricted to these two application variable names. Automatically injected `VITE_VERCEL_*` metadata, including observability configuration and future platform additions, is ignored by application validation and excluded from the application's client environment. Other unexpected `VITE_` names, including API-prefix lookalikes, remain rejected. Platform metadata never replaces the backend URL. Development retains the local backend setting.
 
 Backend production startup requires a complete SMTP configuration and matching HTTPS frontend/backend origins; each OAuth provider must be fully configured or disabled. SMTP delivery and provider dashboards still require staging verification. Render free web services block common SMTP ports. Consult the deployment checklist for the plan/egress gate.
 
