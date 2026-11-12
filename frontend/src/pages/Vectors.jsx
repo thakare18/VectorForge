@@ -1,3 +1,5 @@
+import { metadataText, movePage } from "../utils/workflows";
+import Button from "../components/common/Button";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PageHeader from "../components/common/PageHeader";
@@ -11,17 +13,22 @@ import { formatScore } from "../utils/formatters";
 export default function Vectors() {
   const [vectors, setVectors] = useState([]);
   const [stats, setStats] = useState(null);
+  const [page, setPage] = useState({ offset: 0, history: [] });
+  const { offset } = page;
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getVectors()
+    setLoading(true);
+    getVectors({ offset, limit: 100 })
       .then((res) => {
         setVectors(res.data.data || []);
         setStats(res.data.statistics);
+        setPagination(res.data.pagination);
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [offset]);
 
   return (
     <div className="fade-in">
@@ -50,18 +57,23 @@ export default function Vectors() {
               {
                 key: "category",
                 label: "Category",
-                render: (row) => row.metadata?.category || "--",
+                render: (row) => metadataText(row.metadata?.category, "--"),
               },
               {
                 key: "preview",
                 label: "Preview",
                 render: (row) =>
-                  (row.metadata?.text || row.metadata?.title || "--").slice(0, 60),
+                  (metadataText(row.metadata?.text) || metadataText(row.metadata?.title, "--")).slice(0, 60),
               },
             ]}
             rows={vectors}
             emptyMessage="No vectors stored yet."
           />
+          <div className="mt-4 flex items-center gap-3">
+            <Button disabled={!offset} onClick={() => setPage((current) => movePage(current, "previous"))}>Previous</Button>
+            <span>{offset + (vectors.length ? 1 : 0)}–{offset + vectors.length} of {pagination?.total || 0}</span>
+            <Button disabled={!pagination?.hasMore} onClick={() => setPage((current) => movePage(current, "next", vectors.length))}>Next</Button>
+          </div>
         </Card>
       )}
     </div>

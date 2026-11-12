@@ -34,7 +34,7 @@ export default function Visualizer() {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
 
-  const visited = trace?.visitedNodes || trace?.searchPath || [];
+  const visited = trace?.searchPath || trace?.visitedNodes || [];
   const totalSteps = visited.length || 1;
 
   useEffect(() => {
@@ -67,6 +67,7 @@ export default function Visualizer() {
 
       const searchRes = await searchVectors({
         vector: embedding,
+        embeddingModel: embedRes.data.embeddingModel,
         k: localK,
         metric: localMetric,
         algorithm: localAlgo,
@@ -80,7 +81,7 @@ export default function Visualizer() {
           algorithm: searchRes.data.algorithm,
         })
       );
-      setStep(0);
+      setStep(0); setPlaying(false);
       toast.success("Visualization ready");
     } catch (err) {
       toast.error(err.message);
@@ -95,7 +96,7 @@ export default function Visualizer() {
     <div className="fade-in">
       <PageHeader
         title="Algorithm Visualizer"
-        description="Watch how Brute Force, KD-Tree, and HNSW explore the vector space step by step."
+        description="Follow actual distance evaluations in a projection of the first two coordinates. Splits on higher dimensions are not drawn."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -106,13 +107,13 @@ export default function Visualizer() {
         />
         <StatCard
           label="Visited Vectors"
-          value={visited.length}
+          value={trace?.visitedNodes?.length || 0}
           sub="Nodes inspected before final top-k"
         />
         <StatCard
           label="Nearest Result"
           value={nearest ? `${nearest.id} (${formatScore(nearest.score)})` : "--"}
-          sub="Smallest distance to query"
+          sub="Cosine similarity is higher-better; L1/L2 distance is lower-better"
         />
       </div>
 
@@ -170,8 +171,8 @@ export default function Visualizer() {
           step={step}
           totalSteps={totalSteps}
           playing={playing}
-          onPrev={() => setStep((s) => Math.max(0, s - 1))}
-          onNext={() => setStep((s) => Math.min(totalSteps - 1, s + 1))}
+          onPrev={() => { setPlaying(false); setStep((s) => Math.max(0, s - 1)); }}
+          onNext={() => { setPlaying(false); setStep((s) => Math.min(totalSteps - 1, s + 1)); }}
           onPlay={() => setPlaying((p) => !p)}
           onReset={() => { setStep(0); setPlaying(false); }}
         />

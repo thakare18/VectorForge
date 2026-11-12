@@ -1,11 +1,12 @@
+import { metadataText } from "../../utils/workflows";
 import Badge from "../common/Badge";
 import { formatScore } from "../../utils/formatters";
 
 export default function ResultCard({ result, rank }) {
   const preview =
-    result.metadata?.text?.slice(0, 120) ||
-    result.metadata?.title ||
-    result.metadata?.category ||
+    metadataText(result.metadata?.text).slice(0, 120) ||
+    metadataText(result.metadata?.title) ||
+    metadataText(result.metadata?.category) ||
     "No preview";
 
   return (
@@ -16,9 +17,9 @@ export default function ResultCard({ result, rank }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="font-semibold text-white">{result.id}</h4>
-          <Badge variant="neon">{formatScore(result.score)}</Badge>
+          <Badge variant="neon">{formatScore(result.score)} {result.scoreDirection === "lower-is-better" ? "distance ↓" : "similarity ↑"}</Badge>
           {result.metadata?.category && (
-            <Badge>{result.metadata.category}</Badge>
+            <Badge>{metadataText(result.metadata.category)}</Badge>
           )}
         </div>
         <p className="mt-1 line-clamp-2 text-sm text-gray-400">{preview}</p>

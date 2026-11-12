@@ -6,11 +6,13 @@ import Button from "../common/Button";
 
 export default function UploadBox({ onUpload, loading, progress }) {
   const inputRef = useRef(null);
+  const busy = useRef(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
 
-  const handleFile = (file) => {
+  const handleFile = async (file) => {
+    if (loading || busy.current) return;
     const validationError = validatePdfFile(file);
     if (validationError) {
       setError(validationError);
@@ -18,7 +20,8 @@ export default function UploadBox({ onUpload, loading, progress }) {
     }
     setError(null);
     setSelected(file);
-    onUpload(file);
+    busy.current = true;
+    try { await onUpload(file); } finally { busy.current = false; if (inputRef.current) inputRef.current.value = ""; }
   };
 
   return (

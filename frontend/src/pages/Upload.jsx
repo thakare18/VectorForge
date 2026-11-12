@@ -25,6 +25,7 @@ export default function Upload() {
       const res = await uploadPdf(file, setProgress);
       dispatch(
         addUpload({
+          documentId: res.data.documentId,
           name: file.name,
           fileName: file.name,
           size: file.size,
@@ -57,7 +58,7 @@ export default function Upload() {
         <StatCard
           label="Stored Vectors"
           value={lastUpload?.storedVectors ?? "--"}
-          sub="Total in database"
+          sub="Vectors in this document"
         />
         <StatCard
           label="Session Uploads"

@@ -20,6 +20,7 @@ import Skeleton from "../components/common/Skeleton";
 import { checkHealth } from "../services/health.service";
 import { getVectors } from "../services/vector.service";
 import { formatDate, formatTime } from "../utils/formatters";
+import { dashboardSnapshot } from "../utils/workflows";
 
 export default function Dashboard() {
   const [health, setHealth] = useState(null);
@@ -28,20 +29,17 @@ export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const settings = useSelector((s) => s.settings);
-  const uploadHistory = useSelector((s) => s.upload.history);
   const chatMessages = useSelector((s) => s.chat.messages);
   const aiQueries = chatMessages.filter((message) => message.role === "user").length;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [healthRes, vectorsRes] = await Promise.all([
-        checkHealth(),
-        getVectors(),
-      ]);
-      setHealth(healthRes.data);
-      setStats(vectorsRes.data.statistics);
-      setRecent(vectorsRes.data.recentUploads || []);
+      const result = await dashboardSnapshot(checkHealth, getVectors);
+      setHealth(result.health);
+      setStats(result.vectors?.statistics || null);
+      setRecent(result.vectors?.recentUploads || []);
+      if (result.error) toast.error("Some dashboard data is unavailable. Please retry.");
       setLastUpdated(new Date());
     } catch (err) {
       toast.error(err.message || "Failed to load dashboard");
@@ -94,8 +92,8 @@ export default function Dashboard() {
         />
         <StatCard
           label="Uploaded PDFs"
-          value={uploadHistory.length}
-          sub="Local session"
+          value={stats?.totalDocuments ?? "--"}
+          sub="Persisted documents"
           icon={FileText}
           loading={loading}
         />
@@ -169,15 +167,15 @@ export default function Dashboard() {
 
         <Card>
           <h3 className="mb-4 font-semibold">Recent Uploads</h3>
-          {uploadHistory.length === 0 && recent.length === 0 ? (
+          {recent.length === 0 ? (
             <p className="text-sm text-gray-500">
               No uploads yet. Upload a PDF to embed document chunks.
             </p>
           ) : (
             <ul className="space-y-3">
-              {(uploadHistory.length ? uploadHistory : recent).slice(0, 5).map((item, i) => (
+              {recent.slice(0, 5).map((item, i) => (
                 <li
-                  key={item.id || i}
+                  key={item.documentId || item.id || i}
                   className="flex items-center justify-between rounded-xl bg-white/[0.02] px-4 py-3"
                 >
                   <div>
@@ -187,7 +185,7 @@ export default function Dashboard() {
                       {item.uploadedAt && ` - ${formatDate(item.uploadedAt)}`}
                     </p>
                   </div>
-                  <Badge variant="neon">{item.storedVectors ?? "--"} vectors</Badge>
+                  <Badge variant="neon">{item.chunks ?? "--"} vectors</Badge>
                 </li>
               ))}
             </ul>

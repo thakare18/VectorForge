@@ -1,6 +1,6 @@
 import api from "./api";
 
-export const getVectors = () => api.get("/api/vectors");
+export const getVectors = (params = {}) => api.get("/api/vectors", { params });
 
 export const insertVector = (payload) => api.post("/api/vectors", payload);
 

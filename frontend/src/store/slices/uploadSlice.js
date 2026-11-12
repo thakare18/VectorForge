@@ -17,7 +17,7 @@ const uploadSlice = createSlice({
         ...action.payload,
         uploadedAt: new Date().toISOString(),
       };
-      state.history = [entry, ...state.history].slice(0, 20);
+      state.history = [entry, ...state.history.filter((item) => !entry.documentId || item.documentId !== entry.documentId)].slice(0, 20);
       state.lastUpload = entry;
       state.totalChunks = action.payload.totalChunks || 0;
       state.storedVectors = action.payload.storedVectors || 0;

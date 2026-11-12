@@ -19,6 +19,7 @@ import {
 export default function ChatPage() {
   const dispatch = useDispatch();
   const { messages, mode, loading } = useSelector((s) => s.chat);
+  const threshold = useSelector((s) => s.settings.similarityThreshold);
   const [input, setInput] = useState("");
   const bottomRef = useRef(null);
 
@@ -36,7 +37,7 @@ export default function ChatPage() {
 
     try {
       if (mode === "rag") {
-        const res = await ragChat(text);
+        const res = await ragChat(text, threshold);
         const noAnswer = res.data.retrievedChunks === 0;
         dispatch(
           addMessage({

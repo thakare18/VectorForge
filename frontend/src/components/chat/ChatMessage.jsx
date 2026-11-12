@@ -1,3 +1,4 @@
+import { copyText } from "../../utils/workflows";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Bot, User } from "lucide-react";
@@ -7,9 +8,9 @@ import SourceCard from "./SourceCard";
 export default function ChatMessage({ message }) {
   const isUser = message.role === "user";
 
-  const copyAnswer = () => {
-    navigator.clipboard.writeText(message.content);
-    toast.success("Copied to clipboard");
+  const copyAnswer = async () => {
+    try { await copyText(message.content); toast.success("Copied to clipboard"); }
+    catch { toast.error("Could not copy to clipboard"); }
   };
 
   return (

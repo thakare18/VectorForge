@@ -61,17 +61,16 @@ export default function Search() {
 
     dispatch(setSearchLoading(true));
     try {
-      const embedding =
-        inputMode === "text"
-          ? (await embedText(query)).data.embedding
-          : parseVectorInput(manualVector);
+      const embedded = inputMode === "text" ? (await embedText(query)).data : null;
+      const embedding = embedded?.embedding || parseVectorInput(manualVector);
 
-      if (!Array.isArray(embedding) || embedding.some((value) => Number.isNaN(value))) {
+      if (!Array.isArray(embedding) || embedding.some((value) => !Number.isFinite(value))) {
         throw new Error("Vector must contain only numbers separated by commas or spaces");
       }
 
       const searchRes = await searchVectors({
         vector: embedding,
+        embeddingModel: embedded?.embeddingModel,
         k: localK,
         metric: localMetric,
         algorithm: localAlgo,

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { getModelConfig } from "../services/ai.service";
+import { normalizeBackendUrl } from "../utils/backendUrl";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import PageHeader from "../components/common/PageHeader";
@@ -16,7 +18,11 @@ export default function Settings() {
   const settings = useSelector((s) => s.settings);
   const [local, setLocal] = useState({ ...settings });
 
+  const [model, setModel] = useState("Loading backend model…");
+  useEffect(() => { getModelConfig().then((res) => setModel(res.data.model)).catch(() => setModel("Backend unavailable")); }, [settings.backendUrl]);
+
   const save = () => {
+    try { local.backendUrl = normalizeBackendUrl(local.backendUrl); } catch (error) { toast.error(error.message); return; }
     dispatch(updateSettings(local));
     toast.success("Settings saved locally");
   };
@@ -42,6 +48,7 @@ export default function Settings() {
               <span className="font-mono text-xs uppercase text-gray-500">Backend URL</span>
               <input
                 value={local.backendUrl}
+                readOnly={import.meta.env.PROD}
                 onChange={(e) => setLocal({ ...local, backendUrl: e.target.value })}
                 className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
               />
@@ -85,7 +92,7 @@ export default function Settings() {
             </label>
             <label className="block">
               <span className="font-mono text-xs uppercase text-gray-500">
-                Similarity Threshold: {local.similarityThreshold}
+                RAG Similarity Threshold: {local.similarityThreshold}
               </span>
               <input
                 type="range"
@@ -108,11 +115,11 @@ export default function Settings() {
             <label className="block">
               <span className="font-mono text-xs uppercase text-gray-500">Embedding Model</span>
               <input
-                value={local.embeddingModel}
-                onChange={(e) => setLocal({ ...local, embeddingModel: e.target.value })}
+                value={model}
+                readOnly
                 className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
               />
-              <p className="mt-1 text-xs text-gray-500">Display only - backend controls actual model</p>
+              <p className="mt-1 text-xs text-gray-500">Read from backend; changing the model requires a re-embedding migration.</p>
             </label>
             <label className="block">
               <span className="font-mono text-xs uppercase text-gray-500">Theme</span>

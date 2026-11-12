@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { playbackFrame } from "../../utils/workflows";
 import { CATEGORY_COLORS } from "../../utils/constants";
-import { normalizePoints, projectTo2D } from "../../utils/vectorProjection";
+import { normalizePoints, projectTo2D, splitLine } from "../../utils/vectorProjection";
 
 function getCategoryColor(category) {
   if (!category) return CATEGORY_COLORS.default;
@@ -19,10 +19,7 @@ export default function VectorCanvas({
   width = 560,
   height = 360,
 }) {
-  const [animStep, setAnimStep] = useState(0);
-  const timerRef = useRef(null);
-
-  const projectedVectors = projectTo2D(vectors);
+  const projectedVectors = projectTo2D(trace?.points || vectors);
   const projectedQuery = queryVector
     ? projectTo2D([{ id: "query", values: queryVector }])[0]
     : null;
@@ -32,42 +29,16 @@ export default function VectorCanvas({
     height
   );
   const points = projectedQuery
-    ? normalized.filter((point) => point.id !== "query")
+    ? normalized.slice(0, projectedVectors.length)
     : normalized;
   const queryPoint = projectedQuery
-    ? normalized.find((point) => point.id === "query")
+    ? normalized.at(-1)
     : null;
   const pointMap = new Map(points.map((point) => [point.id, point]));
-  const bounds = projectedVectors.length
-    ? {
-        minX: Math.min(...projectedVectors.map((point) => point.x)),
-        maxX: Math.max(...projectedVectors.map((point) => point.x)),
-        minY: Math.min(...projectedVectors.map((point) => point.y)),
-        maxY: Math.max(...projectedVectors.map((point) => point.y)),
-      }
-    : null;
-
+  const allProjected = projectedQuery ? [...projectedVectors, projectedQuery] : projectedVectors;
   const resultIds = new Set(results.map((r) => r.id));
-  const visited = trace?.visitedNodes || trace?.searchPath || [];
-  const activeId = visited[animStep] || visited[step];
-  const pathIds = (trace?.searchPath || visited).slice(0, animStep + 1);
-
-  useEffect(() => {
-    if (!visited.length) {
-      setAnimStep(0);
-      return;
-    }
-    setAnimStep(0);
-    let current = 0;
-    timerRef.current = setInterval(() => {
-      current += 1;
-      if (current >= visited.length) {
-        clearInterval(timerRef.current);
-      }
-      setAnimStep(current);
-    }, 600);
-    return () => clearInterval(timerRef.current);
-  }, [visited.join(","), trace?.algorithm]);
+  const frame = playbackFrame(trace, step);
+  const { activeId, pathIds, visited } = frame;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40">
@@ -84,41 +55,12 @@ export default function VectorCanvas({
         </defs>
         <rect width={width} height={height} fill="url(#grid)" />
 
-        {trace?.kdTreeSplits?.map((split, i) => {
-          if (!bounds || split.axis > 1) return null;
-          const rangeX = bounds.maxX - bounds.minX || 1;
-          const rangeY = bounds.maxY - bounds.minY || 1;
-          const projectedValue =
-            split.axis === 0 ? split.value * 400 + 200 : (1 - split.value) * 300 + 50;
-          const position =
-            split.axis === 0
-              ? 40 + ((projectedValue - bounds.minX) / rangeX) * (width - 80)
-              : 40 + ((projectedValue - bounds.minY) / rangeY) * (height - 80);
-
-          return split.axis === 0 ? (
-            <line
-              key={`split-${i}`}
-              x1={position}
-              y1={40}
-              x2={position}
-              y2={height - 40}
-              stroke="rgba(204,255,0,0.25)"
-              strokeDasharray="4 4"
-            />
-          ) : (
-            <line
-              key={`split-${i}`}
-              x1={40}
-              y1={position}
-              x2={width - 40}
-              y2={position}
-              stroke="rgba(204,255,0,0.25)"
-              strokeDasharray="4 4"
-            />
-          );
+        {frame.splits.map((split, i) => {
+          const line = splitLine(split, allProjected, width, height);
+          return line ? <line key={"split-" + i} {...line} stroke="rgba(204,255,0,0.25)" strokeDasharray="4 4" /> : null;
         })}
 
-        {trace?.hnswEdges?.map((edge, i) => {
+        {frame.edges.map((edge, i) => {
           const from = pointMap.get(edge.from);
           const to = pointMap.get(edge.to);
           if (!from || !to) return null;
@@ -137,7 +79,7 @@ export default function VectorCanvas({
           );
         })}
 
-        {pathIds.length > 1 &&
+        {!trace?.hnswEdges && pathIds.length > 1 &&
           pathIds.slice(0, -1).map((id, i) => {
             const from = points.find((p) => p.id === pathIds[i]);
             const to = points.find((p) => p.id === pathIds[i + 1]);
@@ -159,7 +101,7 @@ export default function VectorCanvas({
         {points.map((point) => {
           const isResult = resultIds.has(point.id);
           const isActive = point.id === activeId;
-          const isVisited = visited.includes(point.id);
+          const isVisited = visited.has(point.id);
           const color = getCategoryColor(point.category);
 
           return (

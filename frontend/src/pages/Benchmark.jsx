@@ -78,7 +78,7 @@ export default function Benchmark() {
         }
       />
 
-      {loading && <Loader label="Running 100 benchmark iterations..." />}
+      {loading && <Loader label="Running benchmark measurements..." />}
 
       {data && !loading && (
         <>
@@ -86,7 +86,7 @@ export default function Benchmark() {
             <StatCard
               label="Dataset Size"
               value={data.datasetSize}
-              sub={`${data.queryCount} queries - k=${data.k}`}
+              sub={`${data.runs} runs × ${data.queryCount} queries - k=${data.k}`}
               icon={Target}
             />
             <StatCard
@@ -138,7 +138,7 @@ export default function Benchmark() {
             <Card>
               <h3 className="mb-2 font-semibold">Performance Table</h3>
               <p className="mb-3 text-xs text-orange-300">
-                Backend benchmark currently clears and reloads benchmark vectors before running.
+                The benchmark uses a separate synthetic dataset; your stored vectors are unchanged.
               </p>
               <Table
                 columns={[
