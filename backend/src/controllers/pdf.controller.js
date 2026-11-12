@@ -1,140 +1,24 @@
-const {
-    extractText,
-    createChunks
-} = require("../services/pdf.service");
-
-const {
-    generateEmbedding
-} = require("../services/ai.service");
-
-const VectorDB =
-    require("../database/vector.database");
-
-// UPDATED
-const vectorDB =
-    new VectorDB();
-
-// UPDATED
-const {
-    saveVector
-} = require("../services/vector.persistence.service");
-
-// UPDATED
-const { v4: uuidv4 } = require("uuid");
-
-const uploadPDF = async (
-    req,
-    res
-) => {
-
+const { extractText } = require("../services/pdf.service");
+const { ingestDocument } = require("../services/document.ingestion.service");
+const fs = require("fs/promises");
+const uploadPDF = async (req, res) => {
     try {
-
-        if (!req.file) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message: "PDF file is required."
-
-            });
-
-        }
-
-        const text =
-            await extractText(
-                req.file.path
-            );
-
-        const chunks =
-            createChunks(text);
-
-        // UPDATED
-        const documentId =
-            uuidv4();
-
-        for (
-            let i = 0;
-            i < chunks.length;
-            i++
-        ) {
-
-            const embedding =
-                await generateEmbedding(
-                    chunks[i]
-                );
-
-            // UPDATED
-            const vector = {
-
-                id:
-                    `${documentId}-chunk-${i + 1}`,
-
-                values:
-                    embedding,
-
-                metadata: {
-
-                    text:
-                        chunks[i],
-
-                    documentId,
-
-                    chunkIndex:
-                        i + 1
-
-                }
-
-            };
-
-            // UPDATED
-            vectorDB.insert(
-                vector
-            );
-
-            // UPDATED
-            await saveVector(
-                vector,
-                req.user._id
-            );
-
-        }
-
-        res.status(200).json({
-
-            success: true,
-
-            message:
-                "Document embedded successfully.",
-
-            // UPDATED
-            documentId,
-
-            totalChunks:
-                chunks.length,
-
-            storedVectors:
-                vectorDB.getAll().length
-
-        });
-
+        if (!req.file) return res.status(400).json({ success: false, message: "PDF file is required." });
+        const signal = AbortSignal.timeout(45000);
+        const handle = await fs.open(req.file.path, "r"), signature = Buffer.alloc(5);
+        try { await handle.read(signature, 0, 5, 0); } finally { await handle.close(); }
+        if (signature.toString() !== "%PDF-") return res.status(400).json({ success: false, message: "Invalid PDF file." });
+        const text = await extractText(req.file.path);
+        const { document, duplicate } = await ingestDocument({ userId: req.user._id, text, fileName: req.file.originalname, signal });
+        res.json({ success: true, message: duplicate ? "Document already stored." : "Document embedded successfully.",
+            documentId: document.documentId, duplicate, totalChunks: document.chunks.length, storedVectors: document.chunks.length });
     } catch (error) {
-
-        res.status(500).json({
-
-            success: false,
-
-            message:
-                error.message
-
-        });
-
+        const status = [400, 413].includes(error.status) ? error.status : 503;
+        res.status(status).json({ success: false, message: status === 503 ? "Document processing failed. No partial document was published; retry safely." : error.message });
+    } finally {
+        if (req.file?.path) {
+            try { await fs.unlink(req.file.path); } catch { console.warn("PDF temporary-file cleanup failed."); }
+        }
     }
-
 };
-
-module.exports = {
-
-    uploadPDF
-
-};
+module.exports = { uploadPDF };

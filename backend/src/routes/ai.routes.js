@@ -8,6 +8,9 @@ const {
 
 const router =
     express.Router();
+router.use(require("../middleware/auth.middleware"));
+router.get("/config", (req, res) => res.json({ success: true, ...require("../config/embedding"), similarityThreshold: 0.6 }));
+router.use(require("../middleware/rateLimiter").limit("ai-user", 30, 15 * 60 * 1000, true));
 
 router.post(
     "/chat",
@@ -21,7 +24,8 @@ router.post(
 
 router.post(
     "/rag",
-    ragChat
+    require("../middleware/workLimiter"),
+    require("../middleware/workLimiter").run(ragChat)
 );
 
 module.exports = router;

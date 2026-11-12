@@ -29,8 +29,8 @@ const {
  * @swagger
  * /api/vectors:
  *   get:
- *     summary: Get all vectors
- *     description: Returns all vectors belonging to the authenticated user.
+ *     summary: Get a page of vectors
+ *     description: Returns a bounded page and persisted totals for the authenticated user. Use offset and limit (1 to 500); advance offset by the returned data length.
  *     tags:
  *       - Vectors
  *     responses:
@@ -178,7 +178,7 @@ router.delete(
  *               count: 5
  *               data: []
  */
-router.post("/search", authMiddleware, searchVectors);
+router.post("/search", authMiddleware, require("../middleware/workLimiter"), require("../middleware/workLimiter").run(searchVectors));
 
 
 /**
@@ -204,7 +204,7 @@ router.post("/search", authMiddleware, searchVectors);
  *                   averageExecutionTime: "4.14 ms"
  *                 hnsw:
  *                   averageExecutionTime: "3.39 ms"
- *               runs: 1000
+ *               runs: 20
  */
 
 
@@ -212,6 +212,8 @@ router.post("/search", authMiddleware, searchVectors);
 router.get(
     "/benchmark",
     authMiddleware,
+    require("../middleware/rateLimiter").limit("benchmark", 2, 15 * 60 * 1000, true),
+    require("../middleware/workLimiter"),
     benchmarkSearch
 );
 
