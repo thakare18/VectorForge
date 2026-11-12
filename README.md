@@ -769,15 +769,3 @@ Prathamesh Vinayak Thakare
 * GitHub: [https://github.com/thakare18](https://github.com/thakare18)
 * LinkedIn: [https://www.linkedin.com/in/prathameshv-thakare/](https://www.linkedin.com/in/prathameshv-thakare/)
 * Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
-
-### Phase 2 compatibility
-
-Use `VITE_API_URL` for the frontend backend origin. `VITE_API_BASE_URL` is accepted only as a migration fallback when the canonical variable is absent. Authentication and general API calls share the same configured origin. Sessions persist on this browser for up to 24 hours; there is no separate remember-me duration. See `PHASE_2_CORE_FIXES_REPORT.md` for search score semantics, pagination, embedding provenance and non-destructive data compatibility.
-
-### Phase 3 production safeguards
-
-Production builds require a non-local HTTPS `VITE_API_URL` (legacy `VITE_API_BASE_URL` is fallback only). Browser-saved backend overrides are ignored in production; rebuild to change the backend. Vite's `envPrefix` is restricted to these two application variable names. Automatically injected `VITE_VERCEL_*` metadata, including observability configuration and future platform additions, is ignored by application validation and excluded from the application's client environment. Other unexpected `VITE_` names, including API-prefix lookalikes, remain rejected. Platform metadata never replaces the backend URL. Development retains the local backend setting.
-
-Backend production startup requires a complete SMTP configuration and matching HTTPS frontend/backend origins; each OAuth provider must be fully configured or disabled. SMTP delivery and provider dashboards still require staging verification. Render free web services block common SMTP ports. Consult the deployment checklist for the plan/egress gate.
-
-Run `npm test` in each package. Opt-in disposable MongoDB integration tests and the read-only legacy inventory are documented in `PHASE_3_PRODUCTION_READINESS_REPORT.md`. The final audit matrix preserves unresolved findings and live-verification gaps. No deployment or legacy data migration is performed by these documentation changes.
