@@ -1,55 +1,10 @@
-const {
-    cosineSimilarity,
-    euclideanDistance,
-    manhattanDistance
-} = require("./distance");
-
-const calculateScore = (queryVector, targetVector, metric) => {
-    switch (metric) {
-        case "euclidean":
-            return euclideanDistance(queryVector, targetVector);
-        case "manhattan":
-            return manhattanDistance(queryVector, targetVector);
-        case "cosine":
-        default:
-            return cosineSimilarity(queryVector, targetVector);
-    }
+const { metricDistance, scored, compare } = require("./distance");
+const { validateSearch } = require("../validators/vector.contract");
+const search = (vectors, query, k = 5, metric = "cosine", withTrace = false) => {
+    validateSearch(query, k, metric, "brute-force", withTrace);
+    const evaluated = vectors.map((v) => scored(v, metricDistance(query, v.values, metric), metric));
+    const results = [...evaluated].sort(compare).slice(0, k);
+    return withTrace ? { results, trace: { visitedNodes: evaluated.map((v) => v.id), searchPath: evaluated.map((v) => v.id),
+        distances: evaluated.map((v) => ({ id: v.id, distance: v.distance })) } } : results;
 };
-
-const search = (vectors, queryVector, k = 5, metric = "cosine", withTrace = false) => {
-    const visitedNodes = [];
-    const distances = [];
-
-    const results = vectors.map((vector) => {
-        const score = calculateScore(queryVector, vector.values, metric);
-        if (withTrace) {
-            visitedNodes.push(vector.id);
-            distances.push({ id: vector.id, distance: score });
-        }
-        return { ...vector, score };
-    });
-
-    if (metric === "cosine") {
-        results.sort((a, b) => b.score - a.score);
-    } else {
-        results.sort((a, b) => a.score - b.score);
-    }
-
-    const topK = results.slice(0, k);
-
-    if (!withTrace) {
-        return topK;
-    }
-
-    return {
-        results: topK,
-        trace: {
-            visitedNodes,
-            searchPath: visitedNodes,
-            distances,
-            executionTime: null
-        }
-    };
-};
-
 module.exports = { search };

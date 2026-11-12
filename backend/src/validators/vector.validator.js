@@ -8,8 +8,10 @@ const insertVectorSchema = Joi.object({
     values: Joi.array()
         .items(Joi.number())
         .min(1)
+        .max(4096)
         .required(),
 
+    embeddingModel: Joi.string().max(100).allow(null).optional(),
     metadata: Joi.object()
         .optional()
 

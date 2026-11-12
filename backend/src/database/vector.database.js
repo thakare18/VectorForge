@@ -1,148 +1,53 @@
-const {
-    createGraph,
-    insert,
-    greedySearch
-} = require("../algorithms/hnsw/HNSWGraph");
-
+const { createGraph, insert, greedySearch } = require("../algorithms/hnsw/HNSWGraph");
 const bruteForce = require("../algorithms/bruteForce");
-
-// UPDATED
-const {
-    buildKDTree,
-    search
-} = require("../algorithms/kdTree");
-
+const kd = require("../algorithms/kdTree");
+const { validateVector, validateSearch, validateValues, valuesOf, invalid } = require("../validators/vector.contract");
 class VectorDB {
-    constructor() {
-        this.vectors = [];
-
-        
-        this.kdTree = null;
-
-        this.hnswGraph = createGraph();
+    constructor(options = {}) { this.options = options; this.clear(); }
+    insert(input) {
+        const vector = validateVector(input);
+        if (this.dimensions !== null) validateValues(vector.values, this.dimensions);
+        if (this.model !== null && vector.embeddingModel !== this.model) throw invalid("Embedding model does not match this index.");
+        if (this.vectors.length && this.model === null && vector.embeddingModel !== null) throw invalid("Cannot mix untagged and model-tagged vectors.");
+        this.dimensions = vector.values.length; this.model = vector.embeddingModel;
+        const index = this.vectors.findIndex((v) => v.id === vector.id);
+        if (index < 0) this.vectors.push(vector); else this.vectors[index] = vector;
+        this.invalidate();
+        return structuredClone(vector);
     }
-
-   insert(vector) {
-
-    this.vectors.push(vector);
-
-    insert(
-        this.hnswGraph,
-        vector
-    );
-
-    return vector;
-
-}
-
-    getAll() {
-        return this.vectors;
-    }
-
-    getById(id) {
-        return this.vectors.find((vector) => vector.id === id);
-    }
-
+    invalidate() { this.kdTree = null; this.graphs = new Map(); this.hnswGraph = null; }
+    getAll() { return structuredClone(this.vectors); }
+    getById(id) { const v = this.vectors.find((item) => item.id === id); return v ? structuredClone(v) : undefined; }
     delete(id) {
-        const index = this.vectors.findIndex((vector) => vector.id === id);
-
-        if (index === -1) {
-            return false;
-        }
-
-        this.vectors.splice(index, 1);
-
-        // UPDATED
-        this.buildKDTree();
-
+        const index = this.vectors.findIndex((v) => v.id === id);
+        if (index < 0) return false;
+        this.vectors.splice(index, 1); this.invalidate();
+        if (!this.vectors.length) { this.dimensions = null; this.model = null; }
         return true;
     }
-
-    clear() {
-        this.vectors = [];
-        // UPDATED
-        this.kdTree = null;
-
-        this.hnswGraph =
-    createGraph();
+    clear() { this.vectors = []; this.dimensions = null; this.model = null; this.invalidate(); }
+    size() { return this.vectors.length; }
+    search(query, k = 5, metric = "cosine", algorithm = "brute-force", withTrace = false) {
+        validateSearch(query, k, metric, algorithm, withTrace);
+        query = valuesOf(query);
+        if (this.dimensions !== null) validateValues(query, this.dimensions);
+        const start = process.hrtime.bigint(); let output;
+        if (algorithm === "kd-tree") {
+            if (!this.kdTree) this.buildKDTree();
+            output = kd.search(this.kdTree, query, k, withTrace, metric);
+        } else if (algorithm === "hnsw") {
+            if (!this.graphs.has(metric)) {
+                const graph = createGraph({ metric, random: this.options.random });
+                this.vectors.forEach((v) => insert(graph, v));
+                this.graphs.set(metric, graph);
+            }
+            this.hnswGraph = this.graphs.get(metric);
+            output = greedySearch(this.hnswGraph, query, k, this.hnswGraph.efSearch, withTrace);
+        } else output = bruteForce.search(this.vectors, query, k, metric, withTrace);
+        if (withTrace) output.trace.executionTime = `${(Number(process.hrtime.bigint() - start) / 1e6).toFixed(4)} ms`;
+        return structuredClone(output);
     }
-
-    size() {
-        return this.vectors.length;
-    }
-
-     // UPDATED
-search(
-    queryVector,
-    k = 5,
-    metric = "cosine",
-    algorithm = "brute-force",
-    withTrace = false
-) {
-
-    const startTime = process.hrtime.bigint();
-
-    let output;
-
-    if (algorithm === "kd-tree") {
-
-        if (!this.kdTree) {
-            this.buildKDTree();
-        }
-
-        output = search(
-            this.kdTree,
-            queryVector,
-            k,
-            withTrace
-        );
-
-    } else if (algorithm === "hnsw") {
-
-        output = greedySearch(
-            this.hnswGraph,
-            queryVector,
-            k,
-            this.hnswGraph.efSearch,
-            withTrace
-        );
-
-    } else {
-
-        output = bruteForce.search(
-            this.vectors,
-            queryVector,
-            k,
-            metric,
-            withTrace
-        );
-
-    }
-
-    const endTime = process.hrtime.bigint();
-    const executionTime = Number(endTime - startTime) / 1e6;
-
-    if (!withTrace) {
-        return output;
-    }
-
-    const results = output.results;
-    const trace = output.trace || {};
-    trace.executionTime = `${executionTime.toFixed(4)} ms`;
-
-    return { results, trace };
+    buildKDTree() { this.kdTree = kd.buildKDTree(this.vectors); }
+    getKDTree() { return this.kdTree; }
 }
-
-     // UPDATED
-    buildKDTree() {
-        this.kdTree = buildKDTree(this.vectors);
-    }
-
-    // UPDATED
-    getKDTree() {
-        return this.kdTree;
-    }
-}
-
-
 module.exports = VectorDB;

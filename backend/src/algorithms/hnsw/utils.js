@@ -1,5 +1,5 @@
 const {
-    euclideanDistance
+    metricDistance
 } = require("../distance");
 
 const MAX_LEVEL = 16;
@@ -12,13 +12,13 @@ const DEFAULT_EF_CONSTRUCTION = 40;
 
 const DEFAULT_EF_SEARCH = 30;
 
-const generateRandomLevel = () => {
+const generateRandomLevel = (random = Math.random) => {
 
     let level = 0;
 
     while (
 
-        Math.random() < LEVEL_PROBABILITY &&
+        random() < LEVEL_PROBABILITY &&
 
         level < MAX_LEVEL
 
@@ -314,17 +314,7 @@ class MaxHeap {
 
 }
 
-const distanceBetween = (
-    firstVector,
-    secondVector
-) => {
-
-    return euclideanDistance(
-        firstVector.values,
-        secondVector.values
-    );
-
-};
+const distanceBetween = (firstVector, secondVector, metric = "euclidean") => metricDistance(firstVector, secondVector, metric);
 
 const greedySearchLayer = (
     graph,
@@ -338,15 +328,17 @@ const greedySearchLayer = (
     let currentDistance =
         distanceBetween(
             queryVector,
-            current.vector
+            current.vector, graph.metric
         );
 
+    graph.observe?.(current, currentDistance, null, level);
     let improved = true;
 
     while (improved) {
 
         improved = false;
 
+        const expandedId = current.vector.id;
         const neighborIds =
             current.neighbors.get(level) || [];
 
@@ -366,9 +358,10 @@ const greedySearchLayer = (
             const distance =
                 distanceBetween(
                     queryVector,
-                    neighbor.vector
+                    neighbor.vector, graph.metric
                 );
 
+            graph.observe?.(neighbor, distance, expandedId, level);
             if (distance < currentDistance) {
 
                 current = neighbor;
@@ -407,9 +400,10 @@ const searchLayer = (
     const entryDistance =
         distanceBetween(
             queryVector,
-            entryPoint.vector
+            entryPoint.vector, graph.metric
         );
 
+    graph.observe?.(entryPoint, entryDistance, null, level);
     candidates.push({
 
         node: entryPoint,
@@ -477,9 +471,10 @@ const searchLayer = (
             const distance =
                 distanceBetween(
                     queryVector,
-                    neighbor.vector
+                    neighbor.vector, graph.metric
                 );
 
+            graph.observe?.(neighbor, distance, current.node.vector.id, level);
             const worstDistance =
                 results.peek()
                     ?.distance ?? Infinity;

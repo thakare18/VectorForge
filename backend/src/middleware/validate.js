@@ -5,7 +5,7 @@ const validate = (schema) => {
         //console.log(req.body);
 
         const { error } =
-            schema.validate(req.body);
+            schema.validate(req.body, { convert: false });
 
         if (error) {
 

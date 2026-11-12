@@ -1,3 +1,5 @@
+const { validateValues, validateSearch } = require("../../validators/vector.contract");
+const { scored, compare } = require("../distance");
 const {
     createNode,
     addNeighbor,
@@ -16,10 +18,13 @@ const {
     distanceBetween
 } = require("./utils");
 
-const createGraph = () => {
+const createGraph = (options = {}) => {
 
     return {
 
+        metric: options.metric || "euclidean",
+        random: options.random || Math.random,
+        dimensions: undefined,
         nodes: new Map(),
 
         entryPoint: null,
@@ -145,7 +150,7 @@ const pruneNeighbors = (
                     distance:
                         distanceBetween(
                             node.vector,
-                            neighbor.vector
+                            neighbor.vector, graph.metric
                         )
 
                 };
@@ -230,18 +235,12 @@ const insert = (
     vector
 ) => {
 
-    if (
-        graph.nodes.has(vector.id)
-    ) {
-
-        return graph.nodes.get(
-            vector.id
-        );
-
-    }
+    validateValues(vector.values, graph.dimensions);
+    if (graph.nodes.has(vector.id)) throw new Error("Duplicate HNSW ID; update through VectorDB to rebuild indexes.");
+    graph.dimensions = vector.values.length;
 
     const level =
-        generateRandomLevel();
+        generateRandomLevel(graph.random);
 
     const node =
         addNode(
@@ -340,120 +339,26 @@ const insert = (
 
 };
 
-const greedySearch = (
-    graph,
-    queryVector,
-    k = 5,
-    ef = graph.efSearch,
-    withTrace = false
-) => {
-
-    if (
-        graph.entryPoint === null
-    ) {
-
-        return withTrace
-            ? { results: [], trace: { visitedNodes: [], searchPath: [], hnswEdges: [] } }
-            : [];
-
-    }
-
-    const visitedNodes = [];
-    const searchPath = [];
-    const hnswEdges = [];
-    const distances = [];
-
-    const recordVisit = (node) => {
+const greedySearch = (graph, queryVector, k = 5, ef = graph.efSearch, withTrace = false) => {
+    validateSearch(queryVector, k, graph.metric, "hnsw", withTrace);
+    validateValues(queryVector, graph.dimensions);
+    const trace = { visitedNodes: [], searchPath: [], hnswEdges: [], distances: [], events: [] };
+    const seen = new Set();
+    graph.observe = withTrace ? (node, distance, from, level) => {
         const id = node.vector.id;
-        if (!visitedNodes.includes(id)) {
-            visitedNodes.push(id);
-        }
-        searchPath.push(id);
-        distances.push({
-            id,
-            distance: distanceBetween(queryVector, node.vector)
-        });
-    };
-
-    let current =
-        graph.entryPoint;
-
-    recordVisit(current);
-
-    for (
-        let level =
-            graph.maxLevel;
-
-        level > 0;
-
-        level--
-    ) {
-
-        const prev = current;
-        current =
-            greedySearchLayer(
-                graph,
-                queryVector,
-                current,
-                level
-            );
-
-        if (current !== prev) {
-            hnswEdges.push({
-                from: prev.vector.id,
-                to: current.vector.id,
-                level
-            });
-            recordVisit(current);
-        }
-
-    }
-
-    const layerResults =
-        searchLayer(
-            graph,
-            queryVector,
-            current,
-            0,
-            Math.max(
-                ef,
-                k
-            )
-        );
-
-    for (const item of layerResults) {
-        recordVisit(item.node);
-    }
-
-    const results = layerResults
-        .sort(
-            (first, second) =>
-                first.distance -
-                second.distance
-        )
-        .slice(
-            0,
-            k
-        )
-        .map(
-            result =>
-                result.node.vector
-        );
-
-    if (!withTrace) {
-        return results;
-    }
-
-    return {
-        results,
-        trace: {
-            visitedNodes,
-            searchPath,
-            hnswEdges,
-            distances
-        }
-    };
-
+        if (!seen.has(id)) { seen.add(id); trace.visitedNodes.push(id); }
+        trace.searchPath.push(id); trace.distances.push({ id, distance });
+        trace.events.push({ id, distance, from, level });
+        if (from !== null) trace.hnswEdges.push({ from, to: id, level, step: trace.events.length - 1 });
+    } : null;
+    try {
+        if (!graph.entryPoint) return withTrace ? { results: [], trace } : [];
+        let current = graph.entryPoint;
+        for (let level = graph.maxLevel; level > 0; level--) current = greedySearchLayer(graph, queryVector, current, level);
+        const candidates = searchLayer(graph, queryVector, current, 0, Math.max(ef, k));
+        const results = candidates.map((item) => scored(item.node.vector, item.distance, graph.metric)).sort(compare).slice(0, k);
+        return withTrace ? { results, trace } : results;
+    } finally { graph.observe = null; }
 };
 
 module.exports = {

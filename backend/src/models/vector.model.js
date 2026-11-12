@@ -20,6 +20,8 @@ const vectorSchema = new mongoose.Schema(
             required: true
         },
 
+        embeddingModel: { type: String, default: null },
+        dimensions: Number,
         metadata: {
             type: mongoose.Schema.Types.Mixed,
             default: {}
