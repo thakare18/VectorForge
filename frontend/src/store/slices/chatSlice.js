@@ -16,6 +16,7 @@ const chatSlice = createSlice({
         ...action.payload,
         timestamp: new Date().toISOString(),
       });
+      state.messages = state.messages.slice(-100);
       setItem(STORAGE_KEYS.chatHistory, state.messages);
     },
     setChatLoading: (state, action) => {

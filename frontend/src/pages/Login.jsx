@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
@@ -14,7 +14,7 @@ import { isValidEmail } from "../utils/validators";
 import { APP_TITLE } from "../utils/constants";
 
 // UPDATED
-import { login } from "../services/auth.service";
+import { login, startOAuth, verifyEmail } from "../services/auth.service";
 
 function GoogleIcon() {
   return (
@@ -62,12 +62,45 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [verification, setVerification] = useState(() => new URLSearchParams(window.location.search).get("verification"));
+  useEffect(() => {
+    if (verification) window.history.replaceState(null, "", "/login");
+  }, [verification]);
+  const confirmEmail = async () => {
+    if (loading) return;
+    setErrorMessage("");
+    try {
+      setLoading(true);
+      const result = await verifyEmail(verification);
+      window.history.replaceState(null, "", "/login");
+      setVerification(null);
+      if (result.passwordSetupToken) {
+        navigate("/reset-password", { replace: true, state: { setupToken: result.passwordSetupToken } });
+        toast.success("Email verified. Choose your sign-in password.");
+        return;
+      }
+      if (result.token && result.user) {
+        dispatch(loginSuccess({ token: result.token, user: result.user }));
+        navigate("/", { replace: true });
+        toast.success("Email verified. Signed in successfully.");
+        return;
+      }
+      toast.success(result.message);
+    } catch (error) {
+      const message = error.status === 400 ? "Verification failed or expired. Please register again or reset your password." : error.message;
+      setErrorMessage(message); toast.error(message);
+    }
+    finally { setLoading(false); }
+  };
 
   // UPDATED
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    setErrorMessage("");
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(email.trim())) {
       toast.error("Enter a valid email");
       return;
     }
@@ -82,7 +115,7 @@ export default function Login() {
 
       // UPDATED
       const response = await login({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -99,8 +132,9 @@ export default function Login() {
       navigate("/");
     } catch (error) {
       const message =
-        error.response?.data?.message || "Login failed. Please try again.";
+        error.response?.data?.message || error.message || "Login failed. Please try again.";
 
+      setErrorMessage(message);
       toast.error(message);
     } finally {
       setLoading(false);
@@ -109,28 +143,15 @@ export default function Login() {
 
   // UPDATED
 // UPDATED
-const BACKEND_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const oauth = (provider) => {
-    if (provider === "google") {
-        window.location.href =
-            `${BACKEND_URL}/api/auth/google`;
-        return;
-    }
-
-    if (provider === "github") {
-        window.location.href =
-            `${BACKEND_URL}/api/auth/github`;
-        return;
-    }
-
-    toast.error(`${provider} login is not connected yet.`);
+const oauth = async (provider) => {
+  try { await startOAuth(provider); } catch (error) { toast.error(error.message); }
 };
 
   return (
     <div className="grid-bg flex min-h-screen items-center justify-center p-4">
       <div className="grain-overlay" />
+      {verification && <div className="relative z-10 p-4" role="status"><Button onClick={confirmEmail} disabled={loading}>Verify email address</Button></div>}
 
       <div className="glass-card relative z-10 w-full max-w-md p-8 fade-in">
         <p className="font-mono text-xs text-neon">v2.0</p>
@@ -167,6 +188,7 @@ const oauth = (provider) => {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
+        {errorMessage && <p role="alert" className="mb-4 text-sm text-red-400">{errorMessage}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
           <label className="block">
             <span className="font-mono text-xs uppercase text-gray-500">
@@ -207,15 +229,13 @@ const oauth = (provider) => {
           </label>
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 text-gray-400">
-              <input type="checkbox" className="accent-[#ccff00]" />
-              Remember me
-            </label>
+            <span className="text-xs text-gray-400">Signed in on this browser for up to 24 hours</span>
 
             <Link to="/forgot-password" className="text-neon hover:underline">
               Forgot password?
             </Link>
           </div>
+          <p className="text-xs text-gray-400">Used Google/GitHub before? <Link to="/forgot-password" className="text-neon hover:underline">Set a password by email</Link> to also sign in here.</p>
 
           <Button type="submit" className="w-full" loading={loading}>
             Sign In

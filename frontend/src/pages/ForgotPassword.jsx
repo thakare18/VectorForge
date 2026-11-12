@@ -13,11 +13,14 @@ export default function ForgotPassword() {
     const [sent, setSent] = useState(false);
 
     // UPDATED
-    const [resetUrl, setResetUrl] = useState("");
+    const [notice, setNotice] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     // UPDATED
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return;
+        setErrorMessage("");
 
         if (!isValidEmail(email)) {
             toast.error("Enter a valid email");
@@ -31,20 +34,19 @@ export default function ForgotPassword() {
             const response = await forgotPassword(email);
 
             // UPDATED
-            if (response.resetUrl) {
-                setResetUrl(response.resetUrl);
-            }
-
+            setNotice(response.message);
             setSent(true);
 
             toast.success(
-                "Password reset link generated."
+                response.message
             );
         } catch (error) {
             const message =
                 error.response?.data?.message ||
+                error.message ||
                 "Unable to generate reset link.";
 
+            setErrorMessage(message);
             toast.error(message);
         } finally {
             setLoading(false);
@@ -64,20 +66,15 @@ export default function ForgotPassword() {
                     Enter your email to receive a reset link.
                 </p>
 
+                {errorMessage && <p role="alert" className="mt-4 text-sm text-red-400">{errorMessage}</p>}
                 {sent ? (
                     <div className="mt-6 text-center">
                         <p className="text-sm text-neon">
-                            Reset link generated successfully.
+                            {notice}
                         </p>
 
-                        {resetUrl && (
-                            <a
-                                href={resetUrl}
-                                className="mt-4 block break-all text-sm text-gray-400 hover:text-neon"
-                            >
-                                Open Reset Password →
-                            </a>
-                        )}
+                        <p className="mt-3 text-sm text-gray-400">Check your inbox and spam folder for the email. If it does not arrive, try again shortly.</p>
+                        <Button variant="secondary" className="mt-4" onClick={() => setSent(false)}>Try again</Button>
 
                         <Link
                             to="/login"

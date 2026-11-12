@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import AppLayout from "./components/layout/AppLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import Loader from "./components/common/Loader";
+import SessionGuard from "./components/layout/SessionGuard";
 const OAuthCallback = lazy(() => import("./pages/OAuthCallback"));
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -49,9 +50,9 @@ export default function App() {
 
           <Route
             element={
-              <ProtectedRoute>
+              <SessionGuard><ProtectedRoute>
                 <AppLayout />
-              </ProtectedRoute>
+              </ProtectedRoute></SessionGuard>
             }
           >
             <Route index element={<Dashboard />} />

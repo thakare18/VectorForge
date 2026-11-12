@@ -1,105 +1,22 @@
-import axios from "axios";
-import { DEFAULT_BACKEND_URL } from "../utils/constants";
-
-const API_URL = `${DEFAULT_BACKEND_URL}/api/auth`;
-
-const register = async (userData) => {
-    const response = await axios.post(
-        `${API_URL}/register`,
-        userData
-    );
-
-    if (response.data.token) {
-        localStorage.setItem(
-            "vectorforge_token",
-            response.data.token
-        );
-
-        localStorage.setItem(
-            "vectorforge_user",
-            JSON.stringify(response.data.user)
-        );
-    }
-
-    return response.data;
-};
-
-const login = async (credentials) => {
-    const response = await axios.post(
-        `${API_URL}/login`,
-        credentials
-    );
-
-    if (response.data.token) {
-        localStorage.setItem(
-            "vectorforge_token",
-            response.data.token
-        );
-
-        localStorage.setItem(
-            "vectorforge_user",
-            JSON.stringify(response.data.user)
-        );
-    }
-
-    return response.data;
-};
-
-
-const forgotPassword = async (email) => {
-    const response = await axios.post(
-        `${API_URL}/forgot-password`,
-        {
-            email
-        }
-    );
-
-    return response.data;
-};
-
-// UPDATED
-const resetPassword = async (token, password) => {
-    const response = await axios.post(
-        `${API_URL}/reset-password`,
-        {
-            token,
-            password
-        }
-    );
-
-    return response.data;
-};
-
-const logout = () => {
-    localStorage.removeItem("vectorforge_token");
-    localStorage.removeItem("vectorforge_user");
-};
-
-const getToken = () => {
-    return localStorage.getItem("vectorforge_token");
-};
-
-const getCurrentUser = () => {
-    const user = localStorage.getItem(
-        "vectorforge_user"
-    );
-
-    return user ? JSON.parse(user) : null;
-};
-
-const isAuthenticated = () => {
-    return !!localStorage.getItem(
-        "vectorforge_token"
-    );
-};
-
-export {
-    register,
-    login,
-    forgotPassword,
-    resetPassword,
-    logout,
-    getToken,
-    getCurrentUser,
-    isAuthenticated
+import api, { getBaseUrl } from "./api";
+import { getItem, removeItem } from "../utils/storage";
+import { STORAGE_KEYS } from "../utils/constants";
+export const register = async (data) => (await api.post("/api/auth/register", data)).data;
+export const login = async (data) => (await api.post("/api/auth/login", data)).data;
+export const forgotPassword = async (email) => (await api.post("/api/auth/forgot-password", { email })).data;
+export const resetPassword = async (token, password) => (await api.post("/api/auth/reset-password", { token, password })).data;
+export const verifyEmail = async (token) => (await api.post("/api/auth/verify-email", { token })).data;
+export const logout = () => ["vectorforge_token", "vectorforge_user", STORAGE_KEYS.auth].forEach(removeItem);
+export const getToken = () => getItem(STORAGE_KEYS.auth)?.token;
+export const getCurrentUser = () => getItem(STORAGE_KEYS.auth)?.user;
+export const isAuthenticated = () => Boolean(getToken());
+export const startOAuth = async (provider) => {
+  if (!["google", "github"].includes(provider)) throw new Error("Unsupported provider.");
+  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, "0")).join("");
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+  const challenge = btoa(String.fromCharCode(...digest)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  // Must survive the navigation; fail safely rather than starting an unbound flow.
+  try { sessionStorage.setItem("vf_oauth_verifier", verifier); }
+  catch { throw new Error("Allow session storage in this browser to use social sign-in."); }
+  window.location.assign(`${getBaseUrl()}/api/auth/${provider}?challenge=${encodeURIComponent(challenge)}`);
 };

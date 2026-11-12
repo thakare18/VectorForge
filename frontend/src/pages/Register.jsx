@@ -1,13 +1,11 @@
-import { APP_TITLE, DEFAULT_BACKEND_URL } from "../utils/constants";
+import { APP_TITLE } from "../utils/constants";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Button from "../components/common/Button";
 import Badge from "../components/common/Badge";
 
 // UPDATED
-import { loginSuccess } from "../store/slices/authSlice";
 
 import {
     isValidEmail,
@@ -18,7 +16,7 @@ import {
 
 
 // UPDATED
-import { register } from "../services/auth.service";
+import { register, startOAuth } from "../services/auth.service";
 
 function GoogleIcon() {
   return (
@@ -40,26 +38,28 @@ function GitHubIcon() {
 }
 
 export default function Register() {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [notice, setNotice] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     const strength = getPasswordStrength(password);
 
     // UPDATED
     const handleRegister = async (e) => {
         e.preventDefault();
+        if (loading) return;
+        setErrorMessage("");
 
         if (!name.trim()) {
             toast.error("Enter your name");
             return;
         }
 
-        if (!isValidEmail(email)) {
+        if (!isValidEmail(email.trim())) {
             toast.error("Enter a valid email");
             return;
         }
@@ -77,26 +77,20 @@ export default function Register() {
             // UPDATED
             const response = await register({
                 name,
-                email,
+                email: email.trim(),
                 password
             });
 
-            // UPDATED
-            dispatch(
-                loginSuccess({
-                    user: response.user,
-                    token: response.token
-                })
-            );
-
-            toast.success("Account created successfully");
-
-            navigate("/");
+            toast.success(response.message);
+            setNotice(response.message);
+            setPassword("");
         } catch (error) {
             const message =
                 error.response?.data?.message ||
+                error.message ||
                 "Registration failed. Please try again.";
 
+            setErrorMessage(message);
             toast.error(message);
         } finally {
             setLoading(false);
@@ -104,17 +98,8 @@ export default function Register() {
     };
 
     // UPDATED
-const oauth = (provider) => {
-    if (provider === "google") {
-        window.location.href =
-            `${DEFAULT_BACKEND_URL}/api/auth/google`;
-        return;
-    }
-
-    if (provider === "github") {
-        window.location.href =
-            `${DEFAULT_BACKEND_URL}/api/auth/github`;
-    }
+const oauth = async (provider) => {
+  try { await startOAuth(provider); } catch (error) { toast.error(error.message); }
 };
     return (
         <div className="grid-bg flex min-h-screen items-center justify-center p-4">
@@ -149,7 +134,16 @@ const oauth = (provider) => {
                     </Button>
                 </div>
 
-                <form onSubmit={handleRegister} className="mt-6 space-y-4">
+                {errorMessage && <p role="alert" className="mt-4 text-sm text-red-400">{errorMessage}</p>}
+                {notice ? <div role="status" className="mt-6 space-y-4 text-sm text-gray-300">
+                    <h2 className="text-lg font-semibold text-neon">Check your email — verification pending</h2>
+                    <p>Email requested for <strong>{email.trim()}</strong>. If this address is incorrect, use “Try registration again” below to correct it.</p>
+                    <p>{notice}</p>
+                    <p>For a new account, open the verification email and select “Verify email address” to finish registration and sign in automatically. Check your spam folder too.</p>
+                    <p>Your account is not ready for password sign-in until verification is complete. Already used Google/GitHub? The verification link lets you choose a password for that same account.</p>
+                    <p>Already registered? Sign in below, or <Link to="/forgot-password" className="text-neon hover:underline">set or reset your password</Link>.</p>
+                    <Button variant="secondary" onClick={() => setNotice("")}>Try registration again</Button>
+                </div> : <form onSubmit={handleRegister} className="mt-6 space-y-4">
                     <label className="block">
                         <span className="font-mono text-xs uppercase text-gray-500">
                             Name
@@ -204,7 +198,7 @@ const oauth = (provider) => {
                     >
                         Register
                     </Button>
-                </form>
+                </form>}
 
                 <p className="mt-6 text-center text-sm text-gray-400">
                     Already have an account?{" "}

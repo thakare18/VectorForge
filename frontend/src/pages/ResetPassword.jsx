@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import Button from "../components/common/Button";
 import { validatePassword } from "../utils/validators";
@@ -9,12 +11,16 @@ import { resetPassword } from "../services/auth.service";
 
 export default function ResetPassword() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const location = useLocation();
+    const [settingPassword] = useState(() => Boolean(location.state?.setupToken));
 
     // UPDATED
     const [searchParams] = useSearchParams();
 
     // UPDATED
-    const token = searchParams.get("token");
+    const [token] = useState(() => location.state?.setupToken || searchParams.get("token"));
+    useEffect(() => { window.history.replaceState(null, "", "/reset-password"); }, []);
 
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
@@ -49,6 +55,7 @@ export default function ResetPassword() {
                 token,
                 password
             );
+            dispatch(logout());
 
             toast.success(
                 "Password reset successfully"
@@ -58,6 +65,7 @@ export default function ResetPassword() {
         } catch (error) {
             const message =
                 error.response?.data?.message ||
+                error.message ||
                 "Password reset failed.";
 
             toast.error(message);
@@ -72,7 +80,7 @@ export default function ResetPassword() {
 
             <div className="glass-card relative z-10 w-full max-w-md p-8 fade-in">
                 <h1 className="gradient-heading text-2xl font-bold">
-                    Reset Password
+                    {settingPassword ? "Set Sign-in Password" : "Reset Password"}
                 </h1>
 
                 <p className="mt-2 text-sm text-gray-400">
@@ -120,7 +128,7 @@ export default function ResetPassword() {
                         className="w-full"
                         loading={loading}
                     >
-                        Reset Password
+                        {settingPassword ? "Set Password" : "Reset Password"}
                     </Button>
                 </form>
 

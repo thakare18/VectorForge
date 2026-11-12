@@ -1,14 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { getItem, setItem } from "../../utils/storage";
-import { STORAGE_KEYS } from "../../utils/constants";
+import { STORAGE_KEYS, DEFAULT_BACKEND_URL } from "../../utils/constants";
 
 const defaultSettings = {
-  backendUrl: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  backendUrl: DEFAULT_BACKEND_URL,
   algorithm: "brute-force",
   metric: "cosine",
   topK: 5,
   similarityThreshold: 0.6,
-  embeddingModel: "text-embedding-004",
+  embeddingModel: "Backend configured",
   theme: "obsidian",
 };
 
@@ -18,10 +18,11 @@ const saved = getItem(STORAGE_KEYS.settings, defaultSettings);
 
 const settingsSlice = createSlice({
   name: "settings",
-  initialState: { ...defaultSettings, ...saved },
+  initialState: { ...defaultSettings, ...saved, ...(import.meta.env.PROD ? { backendUrl: DEFAULT_BACKEND_URL } : {}) },
   reducers: {
     updateSettings: (state, action) => {
       Object.assign(state, action.payload);
+      if (import.meta.env.PROD) state.backendUrl = DEFAULT_BACKEND_URL;
       setItem(STORAGE_KEYS.settings, state);
     },
     resetSettings: () => {
