@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 const env = {
-    ...process.env, NODE_ENV: "production", GEMINI_API_KEY: "synthetic", MONGODB_URI: "mongodb://127.0.0.1/never-connect",
+    ...process.env, NODE_ENV: "production", MAIL_PROVIDER: "smtp", GEMINI_API_KEY: "synthetic", MONGODB_URI: "mongodb://127.0.0.1/never-connect",
     JWT_SECRET: "synthetic-secret-with-more-than-thirty-two-bytes", FRONTEND_URL: "https://frontend.test",
     BACKEND_URL: "https://backend.test", SMTP_HOST: "smtp.invalid", SMTP_PORT: "465", SMTP_USER: "synthetic@example.test", SMTP_PASSWORD: "synthetic",
     GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "", GOOGLE_CALLBACK_URL: "",
@@ -13,6 +13,18 @@ function check(overrides) {
         cwd: require("node:path").join(__dirname, ".."), env: { ...env, ...overrides }, encoding: "utf8"
     });
 }
+
+test("production HTTPS mail requires API credentials and sender, not SMTP, and still rejects localhost reset origins", () => {
+    const api = { MAIL_PROVIDER: "brevo", BREVO_API_KEY: "synthetic-key", MAIL_FROM: "sender@example.test",
+        SMTP_HOST: "", SMTP_PORT: "", SMTP_USER: "", SMTP_PASSWORD: "" };
+    assert.equal(check(api).status, 0);
+    for (const invalid of [{ BREVO_API_KEY: "" }, { BREVO_API_KEY: "private key" }, { MAIL_FROM: "" },
+        { MAIL_FROM: "Sender <sender@example.test>" }, { MAIL_FROM: "sender@example.test\r\nBcc: other@example.test" },
+        { MAIL_PROVIDER: "unsupported" }, { FRONTEND_URL: "http://localhost:5173" }]) {
+        const result = check({ ...api, ...invalid });
+        assert.notEqual(result.status, 0); assert.doesNotMatch(result.stdout + result.stderr, /private key|Bcc:/);
+    }
+});
 test("production configuration accepts a strong secret and HTTPS frontend with disabled unconfigured providers", () => {
     assert.equal(check({}).status, 0);
 });

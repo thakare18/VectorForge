@@ -7,6 +7,9 @@ const {
 const env = cleanEnv(process.env, {
     NODE_ENV: str({ default: "development", choices: ["development", "test", "production"] }),
     BACKEND_URL: str({ default: "" }),
+    MAIL_PROVIDER: str({ default: "smtp", choices: ["smtp", "brevo"] }),
+    BREVO_API_KEY: str({ default: "" }),
+    MAIL_FROM: str({ default: "" }),
 
     PORT: port({
         default: 3000
@@ -107,7 +110,12 @@ for (const provider of ["GOOGLE", "GITHUB"]) {
         }
     }
 }
-const smtp = [env.SMTP_HOST, env.SMTP_PORT, env.SMTP_USER, env.SMTP_PASSWORD];
-if ((production || smtp.some(Boolean)) && !smtp.every(Boolean)) throw new Error("SMTP configuration is incomplete");
-if (env.SMTP_PORT && (!/^\d+$/.test(env.SMTP_PORT) || Number(env.SMTP_PORT) < 1 || Number(env.SMTP_PORT) > 65535)) throw new Error("SMTP_PORT is invalid");
+if (env.MAIL_PROVIDER === "brevo") {
+    if (!env.BREVO_API_KEY.trim() || /\s/.test(env.BREVO_API_KEY)) throw new Error("BREVO_API_KEY is required and must not contain whitespace");
+    if (env.MAIL_FROM.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(env.MAIL_FROM)) throw new Error("MAIL_FROM must be a verified sender email address");
+} else {
+    const smtp = [env.SMTP_HOST, env.SMTP_PORT, env.SMTP_USER, env.SMTP_PASSWORD];
+    if ((production || smtp.some(Boolean)) && !smtp.every(Boolean)) throw new Error("SMTP configuration is incomplete");
+    if (env.SMTP_PORT && (!/^\d+$/.test(env.SMTP_PORT) || Number(env.SMTP_PORT) < 1 || Number(env.SMTP_PORT) > 65535)) throw new Error("SMTP_PORT is invalid");
+}
 module.exports = env;

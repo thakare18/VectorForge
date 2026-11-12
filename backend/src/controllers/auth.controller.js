@@ -95,14 +95,21 @@ const forgotPassword = async (req, res) => {
     if (!validEmail(email)) return badInput(res);
     // Identical response and timing for local, OAuth-only and absent accounts.
     res.json(genericMail);
+    let stage = "reset_persistence";
     try {
         const token = randomToken();
         const user = await User.findOneAndUpdate(
             { email: email.toLowerCase().trim() },
             { $set: { resetPasswordTokenHash: hash(token), resetPasswordToken: null, resetPasswordExpires: new Date(Date.now() + 15 * 60 * 1000) } },
             { returnDocument: "after" });
-        if (user) await sendLink(user.email, "VectorForge password reset", frontend(`/reset-password?token=${token}`));
-    } catch { console.warn("Password-reset email processing failed."); }
+        if (user) {
+            stage = "email";
+            await sendLink(user.email, "VectorForge password reset", frontend(`/reset-password?token=${token}`));
+        }
+    } catch (error) {
+        // Log only a fixed diagnostic category, never addresses, tokens or provider payloads.
+        console.warn("Password-reset processing failed: " + (stage === "email" ? mailFailureCode(error) : stage) + ".");
+    }
 };
 
 const resetPassword = async (req, res) => {
