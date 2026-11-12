@@ -41,6 +41,12 @@ const userSchema = new mongoose.Schema(
             default: null
         },
 
+        resetPasswordTokenHash: { type: String, default: null, index: true },
+        tokenVersion: { type: Number, default: 0 },
+        emailVerified: { type: Boolean, default: false },
+        registrationGrantId: { type: String },
+        oauthIdentities: { google: String, github: String },
+
         resetPasswordExpires: {
             type: Date,
             default: null

@@ -1,49 +1,21 @@
-const jwt = require("jsonwebtoken");
-
-const env = require("../config/env");
-
-// UPDATED
+const { verifyToken } = require("../security/auth");
 const User = require("../models/User");
-
-const authMiddleware = async (req, res, next) => {
+module.exports = async (req, res, next) => {
+    const denied = () => res.status(401).json({ success: false, message: "Authentication required." });
+    const header = req.headers.authorization;
+    if (typeof header !== "string" || !/^Bearer [^\s]+$/.test(header)) return denied();
+    let decoded;
     try {
-        const authHeader = req.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required."
-            });
-        }
-
-        const token = authHeader.split(" ")[1];
-
-        const decoded = jwt.verify(
-            token,
-            env.JWT_SECRET
-        );
-
-        // UPDATED
+        decoded = verifyToken(header.slice(7));
+        if (typeof decoded.userId !== "string" || !/^[a-f0-9]{24}$/i.test(decoded.userId) ||
+            !Number.isInteger(decoded.ver) || decoded.ver < 0) return denied();
+    } catch { return denied(); }
+    try {
         const user = await User.findById(decoded.userId);
-
-        // UPDATED
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "User not found."
-            });
-        }
-
-        // UPDATED
+        if (!user || decoded.ver !== (user.tokenVersion || 0)) return denied();
         req.user = user;
-
         next();
-    } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token."
-        });
+    } catch {
+        res.status(503).json({ success: false, message: "Authentication temporarily unavailable." });
     }
 };
-
-module.exports = authMiddleware;
