@@ -121,11 +121,7 @@ Configuration required:
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-```env
-GEMINI_EMBEDDING_MODEL=gemini-embedding-001
-```
-
-Important model note: one response object may include the metadata label `text-embedding-004`, but the actual AI service code uses `gemini-embedding-001` through Google GenAI.
+The backend uses `gemini-embedding-001`, 3072 dimensions and the existing default embedding task mode. The model/profile is defined in `backend/src/config/embedding.js`; `GEMINI_EMBEDDING_MODEL` is not an environment override. Changing the model requires an explicit compatibility/migration plan.
 
 ### 4. Vector Storage
 
@@ -135,9 +131,9 @@ Current confirmed state:
 
 * MongoDB/Mongoose persistence is implemented.
 * Runtime vector indexes may still be loaded into memory for search and benchmark execution.
-* The benchmark UI notes that benchmark vectors are cleared and reloaded before the benchmark runs.
+* Benchmark vectors are held in an isolated dataset; stored user vectors are unchanged.
 * Vectors are persisted through the Vector Persistence Service.
-* Vector records store `vectorId`, `userId`, `values`, and `metadata`.
+* Manual/legacy vector records store `vectorId`, `userId`, `values` and `metadata`. New PDF chunks are committed together in one owner-scoped MongoDB Document, including model, dimensions and embedding profile. Both formats remain readable.
 
 The persistence layer supports:
 
@@ -153,7 +149,7 @@ Not currently claimed:
 
 ### 5. Search and Retrieval
 
-When a user asks a question, the backend embeds the query and retrieves the most relevant chunks from the in-memory VectorDB.
+When a user asks a question, the backend embeds it and uses cosine brute-force retrieval over a fresh, owner-scoped MongoDB snapshot. Search Lab supports all three algorithms. RAG excludes unverified embedding provenance and keeps the default 0.60 similarity threshold.
 
 The project includes multiple vector search approaches:
 
@@ -201,7 +197,7 @@ sequenceDiagram
 * Auth API routes for register, login, OAuth callbacks, password reset, and current-user lookup.
 * Production auth hardening.
 * PDF ingestion flow.
-* Multi-document collection management.
+* Multiple PDF uploads with owner-scoped retrieval. Collection-management UI is not implemented.
 * Text chunking pipeline.
 * Gemini embedding generation through `@google/genai`.
 * Gemini chat and RAG generation through `@google/genai`.
@@ -212,7 +208,7 @@ sequenceDiagram
   * KD Tree
   * HNSW
 * Benchmarking focused on latency and recall.
-* Persistent benchmark history.
+* Benchmark results for the current page session; persistent benchmark history is not implemented.
 * RAG answer generation using Gemini.
 * Frontend interface for interacting with the backend.
 * Benchmark page at `/benchmark`.
@@ -279,9 +275,9 @@ Benchmarking is exposed through:
 GET /api/vectors/benchmark
 ```
 
-The benchmark endpoint dynamically compares Brute Force, KD-Tree, and HNSW, returning execution times and recall values in the response.
+The authenticated benchmark endpoint measures Brute Force, KD-Tree and HNSW in an isolated worker with a 55-second budget. It uses 20 measured runs and 5 warmup runs over 20 queries, and returns actual execution times and recall. Results are machine- and run-dependent; HNSW is approximate.
 
-The benchmark UI also notes that the backend clears and reloads benchmark vectors before running.
+The benchmark uses an isolated synthetic dataset and never clears stored user vectors.
 
 Benchmarking should measure:
 
@@ -292,7 +288,7 @@ Benchmarking should measure:
 * Embedding dimension.
 * Number of queries tested.
 
-### Current Benchmark Snapshot
+### Historical Benchmark Snapshot (before Phase 2)
 
 The screenshot-provided benchmark run shows:
 
@@ -308,7 +304,7 @@ The screenshot-provided benchmark run shows:
 | KD-Tree     | `3.3583 ms` | `8.7318 ms` | `5.1129 ms` | `100.00%` | Normal  |
 | HNSW        | `0.0781 ms` | `0.2188 ms` | `0.0971 ms` |  `98.00%` | Fastest |
 
-Use these values as the documented benchmark snapshot. Re-run `GET /api/vectors/benchmark` when you need fresh numbers for the current machine, dataset, or code version.
+These historical screenshot values are not validation of the current algorithms. The measured Phase 2 run is recorded in `PHASE_2_CORE_FIXES_REPORT.md`. Re-run `GET /api/vectors/benchmark` when you need fresh numbers for the current machine, dataset, or code version.
 
 ### Result Notes
 
@@ -617,7 +613,7 @@ The backend exposes the following API routes:
 
 ### Prerequisites
 
-* Node.js: `20+` recommended because `@google/genai` requires Node `>=20.0.0`
+* Node.js: `>=22.17.0 <23` (use a supported, patched Node 22 release; local verification used 22.17.1).
 * npm
 * Gemini API key
 * MongoDB connection string
@@ -653,10 +649,10 @@ SMTP_PASSWORD=your_gmail_app_password_here
 
 ### Frontend Environment Variables
 
-If the frontend uses a Vite API base URL, configure it in the frontend environment:
+Configure the canonical public backend origin in the frontend environment before building:
 
 ```env
-VITE_API_BASE_URL=your_backend_url_here
+VITE_API_URL=your_backend_url_here
 ```
 
 ## Running Locally
@@ -698,44 +694,44 @@ Frontend scripts:
 
 ## Deployment
 
-VectorForge is fully deployed using Vercel for the frontend and Render for the backend.
+VectorForge targets Vercel for the frontend and Render for the backend. The Phase 3 changes have not been deployed or verified on either host. See `VECTORFORGE_DEPLOYMENT_CHECKLIST.md` before rollout.
 
 ### Frontend Deployment on Vercel
 
-The Vite React frontend is deployed on Vercel.
+Vercel configuration to verify in the project dashboard:
 
 | Setting          | Value           |
 | ---------------- | --------------- |
 | Project root     | `frontend`      |
-| Install command  | `npm install`   |
+| Install command  | `npm ci`   |
 | Build command    | `npm run build` |
 | Output directory | `dist`          |
-| Status           | `Deployed`      |
+| Status           | `NOT VERIFIED`      |
 
 
 
 ### Backend Deployment on Render
 
-The Node.js/Express backend is deployed on Render.
+Render configuration template: `render.yaml`. Import and deployment require operator action.
 
 | Setting       | Value         |
 | ------------- | ------------- |
 | Project root  | `backend`     |
 | Runtime       | Node.js       |
-| Build command | `npm install` |
+| Build command | `npm ci` |
 | Start command | `npm start`   |
-| Status        | `Deployed`    |
+| Status        | `NOT VERIFIED`    |
 
-The backend API is configured and connected to the deployed Vercel frontend.
+Set Render build command to `npm ci --omit=dev`, health-check path to `/ready`, and supply the exact public origins. `/health` is liveness only. The server binds the configured port after database connection and index initialization.
 
 Backend environment variables include:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_EMBEDDING_MODEL=gemini-embedding-001
-GEMINI_GENERATION_MODEL=gemini-3.6-flash
 MONGODB_URI=your_mongodb_connection_string_here
-FRONTEND_URL=your_vercel_frontend_url
+FRONTEND_URL=your_vercel_frontend_origin
+BACKEND_URL=your_render_backend_origin
+NODE_ENV=production
 ```
 
 Render provides the runtime port through `process.env.PORT`, and the backend is configured to read the port from the environment.
@@ -773,3 +769,15 @@ Prathamesh Vinayak Thakare
 * GitHub: [https://github.com/thakare18](https://github.com/thakare18)
 * LinkedIn: [https://www.linkedin.com/in/prathameshv-thakare/](https://www.linkedin.com/in/prathameshv-thakare/)
 * Email: [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
+
+### Phase 2 compatibility
+
+Use `VITE_API_URL` for the frontend backend origin. `VITE_API_BASE_URL` is accepted only as a migration fallback when the canonical variable is absent. Authentication and general API calls share the same configured origin. Sessions persist on this browser for up to 24 hours; there is no separate remember-me duration. See `PHASE_2_CORE_FIXES_REPORT.md` for search score semantics, pagination, embedding provenance and non-destructive data compatibility.
+
+### Phase 3 production safeguards
+
+Production builds require a non-local HTTPS `VITE_API_URL` (legacy `VITE_API_BASE_URL` is fallback only). Browser-saved backend overrides are ignored in production; rebuild to change the backend. Only these two `VITE_` names are allowed, since every such value is public. Development retains the local backend setting.
+
+Backend production startup requires a complete SMTP configuration and matching HTTPS frontend/backend origins; each OAuth provider must be fully configured or disabled. SMTP delivery and provider dashboards still require staging verification. Render free web services block common SMTP ports. Consult the deployment checklist for the plan/egress gate.
+
+Run `npm test` in each package. Opt-in disposable MongoDB integration tests and the read-only legacy inventory are documented in `PHASE_3_PRODUCTION_READINESS_REPORT.md`. The final audit matrix preserves unresolved findings and live-verification gaps. No deployment or legacy data migration is performed by these documentation changes.
