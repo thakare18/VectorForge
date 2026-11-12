@@ -2,6 +2,35 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolveBackendUrl, validatePublicEnv } from "../src/utils/backendUrl.js";
 import { harness } from "./helpers/harness.js";
+
+const vercelMetadata = Object.fromEntries([
+  "ENV", "TARGET_ENV", "URL", "BRANCH_URL", "PROJECT_PRODUCTION_URL", "DEPLOYMENT_ID", "PROJECT_ID",
+  "GIT_PROVIDER", "GIT_REPO_SLUG", "GIT_REPO_OWNER", "GIT_REPO_ID", "GIT_COMMIT_REF", "GIT_COMMIT_SHA",
+  "GIT_COMMIT_MESSAGE", "GIT_COMMIT_AUTHOR_LOGIN", "GIT_COMMIT_AUTHOR_NAME", "GIT_PREVIOUS_SHA", "GIT_PULL_REQUEST_ID"
+].map((name) => [`VITE_VERCEL_${name}`, "synthetic-metadata"]));
+
+test("Vercel-injected framework metadata does not reject production or preview builds or replace the backend origin", () => {
+  assert.equal(validatePublicEnv({ PROD: true, VITE_API_URL: "https://backend.test",
+    VITE_VERCEL_GIT_REPO_ID: "synthetic-repo-id" }), "https://backend.test");
+  for (const target of ["production", "preview"]) {
+    assert.equal(validatePublicEnv({ ...vercelMetadata, PROD: true, NODE_ENV: "production",
+      VITE_VERCEL_ENV: target, VITE_VERCEL_URL: "frontend-deployment.vercel.app",
+      VITE_API_URL: "https://backend.test" }), "https://backend.test");
+  }
+});
+
+test("allowing Vercel metadata does not allow arbitrary public secrets or similarly named variables", () => {
+  for (const key of ["VITE_GEMINI_KEY", "VITE_JWT_SECRET", "VITE_VERCEL_API_TOKEN", "VITE_VERCEL_SECRET", "VITE_VERCEL_GIT_REPO_ID_SECRET"]) {
+    assert.throws(() => validatePublicEnv({ ...vercelMetadata, PROD: true, VITE_API_URL: "https://backend.test",
+      [key]: "synthetic-private-value" }), (error) => error.message.includes(key) && !error.message.includes("synthetic-private-value"));
+  }
+});
+
+test("Vercel metadata cannot bypass the required production HTTPS API origin", () => {
+  for (const value of [undefined, "http://backend.test", "https://localhost"]) {
+    assert.throws(() => validatePublicEnv({ ...vercelMetadata, PROD: true, VITE_API_URL: value }), /VITE_API_URL|HTTPS backend origin/);
+  }
+});
 test("production rejects missing, HTTP and local backend origins without printing values", () => {
   for (const url of [undefined, "", "http://backend.test", "https://localhost", "https://127.0.0.1", "https://[::1]", "https://foo.localhost"]) {
     assert.throws(() => resolveBackendUrl({ PROD: true, VITE_API_URL: url }));

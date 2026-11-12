@@ -18,7 +18,17 @@ export function validatePublicEnv(env) {
   if (env.PROD && env.NODE_ENV && env.NODE_ENV !== "production") {
     throw new Error("Production builds require NODE_ENV=production.");
   }
-  const allowed = new Set(["VITE_API_URL", "VITE_API_BASE_URL"]);
+  // Vercel injects these documented public framework values during builds.
+  // Keep exact names: a VITE_VERCEL_* wildcard would also admit accidental secrets.
+  // https://vercel.com/docs/environment-variables/framework-environment-variables
+  const allowed = new Set([
+    "VITE_API_URL", "VITE_API_BASE_URL",
+    ...[
+      "ENV", "TARGET_ENV", "URL", "BRANCH_URL", "PROJECT_PRODUCTION_URL", "DEPLOYMENT_ID", "PROJECT_ID",
+      "GIT_PROVIDER", "GIT_REPO_SLUG", "GIT_REPO_OWNER", "GIT_REPO_ID", "GIT_COMMIT_REF", "GIT_COMMIT_SHA",
+      "GIT_COMMIT_MESSAGE", "GIT_COMMIT_AUTHOR_LOGIN", "GIT_COMMIT_AUTHOR_NAME", "GIT_PREVIOUS_SHA", "GIT_PULL_REQUEST_ID"
+    ].map((name) => `VITE_VERCEL_${name}`)
+  ]);
   for (const key of Object.keys(env)) {
     if (key.startsWith("VITE_") && !allowed.has(key)) throw new Error("Unsupported public environment variable: " + key);
   }
