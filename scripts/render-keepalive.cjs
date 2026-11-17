@@ -9,40 +9,77 @@ function healthUrl(origin) {
     return new URL("/health", url).href;
 }
 
-async function ping(origin, { fetchImpl = globalThis.fetch, timeoutMs = 120000 } = {}) {
+class HealthFailure extends Error {
+    constructor(reason, retryable) {
+        super(`Health check failed: ${reason}. Inspect Render service logs.`);
+        this.retryable = retryable;
+    }
+}
+
+async function check(url, fetchImpl, signal) {
+    let response;
+    try {
+        response = await fetchImpl(url, {
+            method: "GET", redirect: "error", signal,
+            headers: { Accept: "application/json", "Cache-Control": "no-cache" }
+        });
+    } catch {
+        throw new HealthFailure("network connection, TLS or redirect error", true);
+    }
+    if (response.status !== 200) {
+        // Do not read or log hosting error pages.
+        try { await response.body?.cancel(); } catch { /* Preserve the HTTP diagnosis. */ }
+        const status = Number.isInteger(response.status) ? response.status : 0;
+        throw new HealthFailure(`HTTP ${status}`, [408, 429, 500, 502, 503, 504].includes(status));
+    }
+    let body;
+    try { body = await response.json(); } catch {
+        // A waking service can temporarily return HTML. Never count it as healthy.
+        throw new HealthFailure("response is not readable JSON (possibly a wake-up page)", true);
+    }
+    if (body?.success !== true || body?.project !== "VectorForge") {
+        throw new HealthFailure("response does not identify a healthy VectorForge application", false);
+    }
+}
+
+async function ping(origin, {
+    fetchImpl = globalThis.fetch, timeoutMs = 120000, retryDelayMs = 10000, onRetry = () => {}
+} = {}) {
     const url = healthUrl(origin);
     const controller = new AbortController();
     let timer;
     try {
         await Promise.race([
             (async () => {
-                const response = await fetchImpl(url, {
-                    method: "GET", redirect: "error", signal: controller.signal,
-                    headers: { Accept: "application/json", "Cache-Control": "no-cache" }
-                });
-                if (response.status !== 200) {
-                    await response.body?.cancel();
-                    throw new Error("Health response failed.");
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    controller.signal.throwIfAborted();
+                    try {
+                        await check(url, fetchImpl, controller.signal);
+                        return;
+                    } catch (error) {
+                        controller.signal.throwIfAborted();
+                        if (!(error instanceof HealthFailure) || !error.retryable || attempt === 3) throw error;
+                        onRetry(`Attempt ${attempt}/3: ${error.message} Retrying in ${retryDelayMs / 1000}s.`);
+                        await require("node:timers/promises").setTimeout(retryDelayMs, undefined, { signal: controller.signal });
+                    }
                 }
-                const body = await response.json();
-                // Render's wake-up HTML is not a successful application response.
-                if (body?.success !== true || body?.project !== "VectorForge") throw new Error("Invalid health response.");
             })(),
             new Promise((_, reject) => { timer = setTimeout(() => {
                 reject(new Error("Health check timed out.")); controller.abort();
             }, timeoutMs); })
         ]);
         return { healthy: true };
-    } catch {
+    } catch (error) {
         // Never print URLs, upstream response bodies or arbitrary network errors.
         throw new Error(controller.signal.aborted
             ? "Health check timed out. Inspect Render service logs."
-            : "Health check failed. Check the Render URL, deployment and service logs.");
+            : error instanceof HealthFailure ? error.message
+                : "Health check failed. Check the Render URL, deployment and service logs.");
     } finally { clearTimeout(timer); }
 }
 
 if (require.main === module) {
-    ping(process.env.RENDER_BACKEND_URL).then(
+    ping(process.env.RENDER_BACKEND_URL, { onRetry: (message) => console.warn(message) }).then(
         () => console.log("VectorForge /health responded successfully."),
         (error) => { console.error(error.message); process.exitCode = 1; }
     );
